@@ -6,21 +6,14 @@ import { useState } from "react"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
-import { CalendarIcon } from "lucide-react"
-
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { cn } from "@/lib/utils"
 import { useToast } from "@/hooks/use-toast"
-import { checkCPF } from "@/lib/api"
+import { checkCPF, registerPatient } from "@/lib/api"
 
 // CPF validation schema
 const cpfSchema = z.object({
@@ -52,8 +45,14 @@ const patientSchema = z.object({
   gender: z.enum(["masculino", "feminino", "outro"], {
     required_error: "Por favor selecione um gênero",
   }),
-  birthDate: z.date({
-    required_error: "Data de nascimento é obrigatória",
+  birthDay: z.string({
+    required_error: "Dia é obrigatório",
+  }),
+  birthMonth: z.string({
+    required_error: "Mês é obrigatório",
+  }),
+  birthYear: z.string({
+    required_error: "Ano é obrigatório",
   }),
   hasInsurance: z.enum(["true", "false"], {
     required_error: "Por favor indique se possui convênio",
@@ -64,6 +63,7 @@ const patientSchema = z.object({
 
 export default function PatientForm() {
   const [step, setStep] = useState<"cpf" | "exists" | "register" | "success">("cpf")
+  const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
 
   // CPF form
@@ -87,7 +87,9 @@ export default function PatientForm() {
       city: "",
       state: "",
       gender: undefined,
-      birthDate: undefined,
+      birthDay: "",
+      birthMonth: "",
+      birthYear: "",
       hasInsurance: undefined,
       insuranceName: "",
       insuranceNumber: "",
@@ -97,6 +99,7 @@ export default function PatientForm() {
   // Handle CPF submission
   const onCPFSubmit = async (data: z.infer<typeof cpfSchema>) => {
     try {
+      setIsLoading(true)
       // Format CPF to standard format
       const formattedCPF = data.cpf.replace(/[^\d]/g, "").replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
 
@@ -116,21 +119,49 @@ export default function PatientForm() {
         description: "Ocorreu um erro ao verificar o CPF. Tente novamente.",
         variant: "destructive",
       })
+    } finally {
+      setIsLoading(false)
     }
   }
 
   // Handle full registration submission
-  const onPatientSubmit = (data: z.infer<typeof patientSchema>) => {
-    // Here you would typically send the data to your backend
-    console.log("Patient data:", data)
+  const onPatientSubmit = async (data: z.infer<typeof patientSchema>) => {
+    try {
+      setIsLoading(true)
 
-    // Show success message
-    setStep("success")
+      // Convert separate date fields to a single date string in ISO format
+      const birthDateString = `${data.birthYear}-${data.birthMonth.padStart(2, "0")}-${data.birthDay.padStart(2, "0")}`
 
-    toast({
-      title: "Cadastro realizado com sucesso!",
-      description: "Seus dados foram salvos. Aguarde o contato do dentista.",
-    })
+      // Create a copy of the data with the birthDate field
+      const patientData = {
+        ...data,
+        birthDate: birthDateString,
+      }
+
+      // Remove the separate date fields before sending to the API
+      delete patientData.birthDay
+      delete patientData.birthMonth
+      delete patientData.birthYear
+
+      // Registrar paciente no banco de dados
+      await registerPatient(patientData)
+
+      // Show success message
+      setStep("success")
+
+      toast({
+        title: "Cadastro realizado com sucesso!",
+        description: "Seus dados foram salvos. Aguarde o contato do dentista.",
+      })
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao cadastrar paciente. Tente novamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   // Format CPF as user types
@@ -195,8 +226,8 @@ export default function PatientForm() {
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">
-                  Verificar
+                <Button type="submit" className="w-full" disabled={isLoading}>
+                  {isLoading ? "Verificando..." : "Verificar"}
                 </Button>
               </form>
             </Form>
@@ -419,49 +450,89 @@ export default function PatientForm() {
                   )}
                 />
 
-                <FormField
-                  control={patientForm.control}
-                  name="birthDate"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Data de Nascimento</FormLabel>
-                      <Popover>
-                        <PopoverTrigger asChild>
+                <div className="grid grid-cols-3 gap-2">
+                  <FormField
+                    control={patientForm.control}
+                    name="birthDay"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Dia</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
                           <FormControl>
-                            <Button
-                              variant={"outline"}
-                              className={cn(
-                                "w-full pl-3 text-left font-normal",
-                                !field.value && "text-muted-foreground",
-                              )}
-                            >
-                              {field.value ? (
-                                format(field.value, "dd/MM/yyyy", { locale: ptBR })
-                              ) : (
-                                <span>Selecione uma data</span>
-                              )}
-                              <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                            </Button>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Dia" />
+                            </SelectTrigger>
                           </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0" align="start">
-                          <Calendar
-                            mode="single"
-                            selected={field.value}
-                            onSelect={field.onChange}
-                            disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
-                            initialFocus
-                            locale={ptBR}
-                            captionLayout="dropdown-buttons"
-                            fromYear={1900}
-                            toYear={new Date().getFullYear()}
-                          />
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                          <SelectContent>
+                            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                              <SelectItem key={day} value={day.toString()}>
+                                {day}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={patientForm.control}
+                    name="birthMonth"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mês</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Mês" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="1">Janeiro</SelectItem>
+                            <SelectItem value="2">Fevereiro</SelectItem>
+                            <SelectItem value="3">Março</SelectItem>
+                            <SelectItem value="4">Abril</SelectItem>
+                            <SelectItem value="5">Maio</SelectItem>
+                            <SelectItem value="6">Junho</SelectItem>
+                            <SelectItem value="7">Julho</SelectItem>
+                            <SelectItem value="8">Agosto</SelectItem>
+                            <SelectItem value="9">Setembro</SelectItem>
+                            <SelectItem value="10">Outubro</SelectItem>
+                            <SelectItem value="11">Novembro</SelectItem>
+                            <SelectItem value="12">Dezembro</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={patientForm.control}
+                    name="birthYear"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Ano</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Ano" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent className="max-h-[200px]">
+                            {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                              <SelectItem key={year} value={year.toString()}>
+                                {year}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
                 <div className="space-y-4">
                   <h3 className="text-lg font-medium">Informações do Convênio</h3>
@@ -517,9 +588,6 @@ export default function PatientForm() {
                                   <SelectValue placeholder="Selecione o convênio" />
                                 </SelectTrigger>
                                 <SelectContent>
-
-                                  <SelectItem value="Odontoprev">Odontoprev</SelectItem>
-                                  <SelectItem value="Bradesco">Bradesco</SelectItem>
                                   <SelectItem value="Sulamérica">Sulamérica</SelectItem>
                                   <SelectItem value="Amil">Amil</SelectItem>
                                   <SelectItem value="Hapvida">Hapvida</SelectItem>
@@ -527,6 +595,8 @@ export default function PatientForm() {
                                   <SelectItem value="Careplus">Careplus</SelectItem>
                                   <SelectItem value="Dental Brasil">Dental Brasil</SelectItem>
                                   <SelectItem value="Crown Odonto">Crown Odonto</SelectItem>
+                                  <SelectItem value="Odontoprev">Odontoprev</SelectItem>
+                                  <SelectItem value="Bradesco">Bradesco</SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -556,8 +626,8 @@ export default function PatientForm() {
                   <Button type="button" variant="outline" className="w-full" onClick={() => setStep("cpf")}>
                     Voltar
                   </Button>
-                  <Button type="submit" className="w-full">
-                    Cadastrar
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading ? "Cadastrando..." : "Cadastrar"}
                   </Button>
                 </div>
               </form>

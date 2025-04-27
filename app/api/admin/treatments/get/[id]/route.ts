@@ -29,6 +29,17 @@ export async function GET(request: Request, { params }: { params: { id: string }
       return NextResponse.json({ error: "Erro ao buscar tratamento" }, { status: 500 })
     }
 
+    // Log the treatment data to debug
+    console.log(
+      "Treatment data from database:",
+      JSON.stringify({
+        id: treatment.id,
+        payment_data_exists: treatment.treatment_payment && treatment.treatment_payment.length > 0,
+        payment_data:
+          treatment.treatment_payment && treatment.treatment_payment.length > 0 ? treatment.treatment_payment[0] : null,
+      }),
+    )
+
     return NextResponse.json({ treatment })
   } catch (error) {
     console.error("Erro ao processar requisição:", error)

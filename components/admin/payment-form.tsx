@@ -46,6 +46,19 @@ export default function PaymentForm({
   const [totalValue, setTotalValue] = useState(0)
   const { toast } = useToast()
 
+  // Log initialData for debugging
+  console.log("Initial payment data:", initialData)
+
+  // Initialize form with default values
+  const form = useForm<z.infer<typeof paymentSchema>>({
+    resolver: zodResolver(paymentSchema),
+    defaultValues: {
+      paymentMethod: "credit_card",
+      installments: "1",
+      paymentDate: null,
+    },
+  })
+
   // Buscar dados atualizados do tratamento para garantir que temos os itens mais recentes
   useEffect(() => {
     const fetchTreatmentData = async () => {
@@ -73,29 +86,28 @@ export default function PaymentForm({
     fetchTreatmentData()
   }, [treatmentId])
 
-  // Converter dados iniciais para o formato do formulário
-  const defaultValues = initialData
-    ? {
-        paymentMethod: initialData.payment_method || "credit_card",
-        installments: initialData.installments?.toString() || "1",
+  // Reset form when initialData changes
+  useEffect(() => {
+    if (initialData) {
+      console.log("Resetting form with:", {
+        paymentMethod: initialData.payment_method,
+        installments: initialData.installments?.toString(),
         paymentDate: initialData.payment_date ? new Date(initialData.payment_date) : null,
-      }
-    : {
-        paymentMethod: "credit_card",
-        installments: "1",
-        paymentDate: null,
-      }
+      })
 
-  // Payment form
-  const form = useForm<z.infer<typeof paymentSchema>>({
-    resolver: zodResolver(paymentSchema),
-    defaultValues,
-  })
+      form.reset({
+        paymentMethod: initialData.payment_method,
+        installments: initialData.installments?.toString(),
+        paymentDate: initialData.payment_date ? new Date(initialData.payment_date) : null,
+      })
+    }
+  }, [initialData, form])
 
   // Handle payment submission
   const onSubmit = async (data: z.infer<typeof paymentSchema>) => {
     try {
       setIsSaving(true)
+      console.log("Submitting payment data:", data)
 
       await savePayment(treatmentId, data.paymentMethod, Number.parseInt(data.installments), data.paymentDate)
 
@@ -117,6 +129,10 @@ export default function PaymentForm({
       setIsSaving(false)
     }
   }
+
+  // Log current form values for debugging
+  const currentValues = form.watch()
+  console.log("Current form values:", currentValues)
 
   // Renderizar formulário somente para leitura
   if (isReadOnly) {
@@ -150,7 +166,7 @@ export default function PaymentForm({
                     </p>
                   </div>
 
-                  {initialData.payment_method === "credit_card" && (
+                  {(initialData.payment_method === "credit_card" || initialData.payment_method === "boleto") && (
                     <div>
                       <p className="font-medium">Parcelas</p>
                       <p>
@@ -217,7 +233,7 @@ export default function PaymentForm({
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                         className="flex flex-col space-y-1"
                       >
                         <FormItem className="flex items-center space-x-3 space-y-0">
@@ -251,14 +267,14 @@ export default function PaymentForm({
                 )}
               />
 
-              {form.watch("paymentMethod") === "credit_card" && (
+              {(form.watch("paymentMethod") === "credit_card" || form.watch("paymentMethod") === "boleto") && (
                 <FormField
                   control={form.control}
                   name="installments"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Parcelas</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o número de parcelas" />

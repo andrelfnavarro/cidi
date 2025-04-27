@@ -17,6 +17,7 @@ import PaymentForm from "@/components/admin/payment-form"
 
 export default function TreatmentDetails({ treatmentId }: { treatmentId: string }) {
   const [treatment, setTreatment] = useState<any>(null)
+  const [paymentData, setPaymentData] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isFinalizing, setIsFinalizing] = useState(false)
   const [editMode, setEditMode] = useState(false)
@@ -29,6 +30,28 @@ export default function TreatmentDetails({ treatmentId }: { treatmentId: string 
       setIsLoading(true)
       const data = await getTreatmentById(treatmentId)
       setTreatment(data.treatment)
+
+      // Extract payment data
+      if (data.treatment?.treatment_payment) {
+        console.log("Raw treatment_payment:", data.treatment.treatment_payment)
+
+        // Check if it's an array with data
+        if (Array.isArray(data.treatment.treatment_payment) && data.treatment.treatment_payment.length > 0) {
+          console.log("Payment data found in array:", data.treatment.treatment_payment[0])
+          setPaymentData(data.treatment.treatment_payment[0])
+        }
+        // Check if it's a direct object
+        else if (typeof data.treatment.treatment_payment === "object" && data.treatment.treatment_payment !== null) {
+          console.log("Payment data found as object:", data.treatment.treatment_payment)
+          setPaymentData(data.treatment.treatment_payment)
+        } else {
+          console.log("No valid payment data found")
+          setPaymentData(null)
+        }
+      } else {
+        console.log("No payment data property found")
+        setPaymentData(null)
+      }
     } catch (error) {
       toast({
         title: "Erro",
@@ -167,7 +190,7 @@ export default function TreatmentDetails({ treatmentId }: { treatmentId: string 
         <TabsContent value="payment" className="mt-6">
           <PaymentForm
             treatmentId={treatmentId}
-            initialData={treatment.treatment_payment?.[0]}
+            initialData={paymentData}
             isReadOnly={isTreatmentFinalized && !editMode}
             onSaved={fetchTreatment}
           />

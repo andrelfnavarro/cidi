@@ -1,27 +1,24 @@
 "use client"
 
 import type React from "react"
-
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { useAuth } from "@/contexts/auth-context"
 
 export default function AuthCheck({ children }: { children: React.ReactNode }) {
   const router = useRouter()
+  const { user, dentist, isLoading } = useAuth()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Verificar se o usuário está logado
-    const isLoggedIn = localStorage.getItem("dentist_logged_in") === "true"
-
-    if (!isLoggedIn) {
-      router.push("/admin")
-    } else {
-      setIsAuthenticated(true)
+    if (!isLoading) {
+      if (!user || !dentist) {
+        router.push("/admin")
+      } else {
+        setIsAuthenticated(true)
+      }
     }
-
-    setIsLoading(false)
-  }, [router])
+  }, [user, dentist, isLoading, router])
 
   if (isLoading) {
     return (

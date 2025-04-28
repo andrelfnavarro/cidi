@@ -11,12 +11,22 @@ export async function POST(request: Request) {
 
     const supabase = createServerSupabaseClient()
 
+    // Get authenticated user
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 })
+    }
+
     // Criar novo tratamento
     const { data, error } = await supabase
       .from("treatments")
       .insert({
         patient_id: patientId,
         status: "aberto",
+        created_by: session.user.id,
+        updated_by: session.user.id,
       })
       .select()
 

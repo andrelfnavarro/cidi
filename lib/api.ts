@@ -245,3 +245,108 @@ export async function finalizeTreatment(treatmentId: string): Promise<any> {
     throw error
   }
 }
+
+// Function to get company information
+export async function getCompanyInfo(): Promise<any> {
+  try {
+    const response = await fetch("/api/admin/company-info")
+
+    if (!response.ok) {
+      throw new Error("Erro ao buscar informações da empresa")
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Erro ao buscar informações da empresa:", error)
+    throw error
+  }
+}
+
+// Function to list dentists
+export async function listDentists(): Promise<any> {
+  try {
+    const response = await fetch("/api/admin/list-dentists")
+
+    if (!response.ok) {
+      throw new Error("Erro ao listar dentistas")
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Erro ao listar dentistas:", error)
+    throw error
+  }
+}
+
+// Function to register a new dentist
+export async function registerDentist(dentistData: any): Promise<any> {
+  try {
+    console.log("Registering dentist:", dentistData)
+
+    const response = await fetch("/api/admin/register-dentist", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(dentistData),
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error("Error response from server:", data)
+      throw new Error(data.error || "Erro ao registrar dentista")
+    }
+
+    return data
+  } catch (error) {
+    console.error("Error registering dentist:", error)
+    throw error
+  }
+}
+
+// Function to update a dentist
+export async function updateDentist(dentistData: any): Promise<any> {
+  try {
+    const response = await fetch("/api/admin/update-dentist", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(dentistData),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Erro ao atualizar dentista")
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Erro ao atualizar dentista:", error)
+    throw error
+  }
+}
+
+// Function to delete a dentist
+export async function deleteDentist(id: string): Promise<any> {
+  try {
+    const response = await fetch("/api/admin/delete-dentist", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json()
+      throw new Error(errorData.error || "Erro ao excluir dentista")
+    }
+
+    return await response.json()
+  } catch (error) {
+    console.error("Erro ao excluir dentista:", error)
+    throw error
+  }
+}

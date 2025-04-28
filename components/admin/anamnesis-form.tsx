@@ -176,55 +176,42 @@ const healthSections = {
   ],
 }
 
-// Anamnesis schema
-const anamnesisSchema = z.object({
-  // Saúde Geral
-  medicalTreatment: z.boolean().default(false),
-  medicalTreatmentDesc: z.string().optional(),
-  medication: z.boolean().default(false),
-  medicationDesc: z.string().optional(),
-  allergy: z.boolean().default(false),
-  allergyDesc: z.string().optional(),
-  pregnant: z.boolean().default(false),
-  breastfeeding: z.boolean().default(false),
-  smoker: z.boolean().default(false),
-  osteoporosis: z.boolean().default(false),
-  alcohol: z.boolean().default(false),
-  diabetes: z.boolean().default(false),
-  surgery: z.boolean().default(false),
-  surgeryDesc: z.string().optional(),
-  bleedingHealingIssues: z.boolean().default(false),
-  bloodTransfusion: z.boolean().default(false),
-  bloodTransfusionReason: z.string().optional(),
-  hypertension: z.boolean().default(false),
-  asthma: z.boolean().default(false),
-  psychologicalIssues: z.boolean().default(false),
-  psychologicalIssuesDesc: z.string().optional(),
-  pacemaker: z.boolean().default(false),
-  infectiousDisease: z.boolean().default(false),
-  infectiousDiseaseDesc: z.string().optional(),
-  otherHealthIssues: z.boolean().default(false),
-  otherHealthIssuesDesc: z.string().optional(),
-  additionalHealthInfo: z.string().optional(),
+// Create a dynamic schema based on the health sections
+const createAnamnesisSchema = () => {
+  const schema: Record<string, any> = {
+    // Optional text fields
+    additionalHealthInfo: z.string().optional(),
+    additionalDentalInfo: z.string().optional(),
+  }
 
-  // Saúde Bucal
-  lastDentalVisit: z.string().optional(),
-  lastTreatment: z.string().optional(),
-  anesthesia: z.boolean().default(false),
-  anesthesiaReaction: z.boolean().default(false),
-  bleedingAfterExtraction: z.boolean().default(false),
-  brushingFrequency: z.string().optional(),
-  mouthwash: z.boolean().default(false),
-  teethGrinding: z.boolean().default(false),
-  coffeeTea: z.boolean().default(false),
-  bleedingGums: z.boolean().default(false),
-  jawPain: z.boolean().default(false),
-  mouthBreathing: z.boolean().default(false),
-  dentalFloss: z.boolean().default(false),
-  tongueCleaning: z.boolean().default(false),
-  sweets: z.boolean().default(false),
-  additionalDentalInfo: z.string().optional(),
-})
+  // Add all general health fields as required booleans
+  healthSections.generalHealth.forEach((item) => {
+    schema[item.id] = z.boolean({
+      required_error: `Por favor, responda se ${item.question.toLowerCase()}`,
+    })
+
+    // Add optional detail fields
+    if (item.detailField) {
+      schema[item.detailField] = z.string().optional()
+    }
+  })
+
+  // Add all oral health fields
+  healthSections.oralHealth.forEach((item) => {
+    if (item.inputType === "text") {
+      schema[item.id] = z.string().optional()
+    } else {
+      schema[item.id] = z.boolean({
+        required_error: `Por favor, responda se ${item.question.toLowerCase()}`,
+      })
+    }
+  })
+
+  return z.object(schema)
+}
+
+// Anamnesis schema
+const anamnesisSchema = createAnamnesisSchema()
 
 export default function AnamnesisForm({
   treatmentId,
@@ -240,7 +227,7 @@ export default function AnamnesisForm({
   const [isSaving, setIsSaving] = useState(false)
   const { toast } = useToast()
 
-  // Converter dados iniciais para o formato do formulário
+  // Converter dados iniciais para o formato do formulário ou usar valores em branco
   const defaultValues = initialData
     ? {
         // Saúde Geral
@@ -291,50 +278,52 @@ export default function AnamnesisForm({
         additionalDentalInfo: initialData.additional_dental_info || "",
       }
     : {
-        // Valores padrão vazios
-        medicalTreatment: false,
+        // Initialize with undefined for boolean fields to make them blank initially
+        // Saúde Geral
+        medicalTreatment: undefined,
         medicalTreatmentDesc: "",
-        medication: false,
+        medication: undefined,
         medicationDesc: "",
-        allergy: false,
+        allergy: undefined,
         allergyDesc: "",
-        pregnant: false,
-        breastfeeding: false,
-        smoker: false,
-        osteoporosis: false,
-        alcohol: false,
-        diabetes: false,
-        surgery: false,
+        pregnant: undefined,
+        breastfeeding: undefined,
+        smoker: undefined,
+        osteoporosis: undefined,
+        alcohol: undefined,
+        diabetes: undefined,
+        surgery: undefined,
         surgeryDesc: "",
-        bleedingHealingIssues: false,
-        bloodTransfusion: false,
+        bleedingHealingIssues: undefined,
+        bloodTransfusion: undefined,
         bloodTransfusionReason: "",
-        hypertension: false,
-        asthma: false,
-        psychologicalIssues: false,
+        hypertension: undefined,
+        asthma: undefined,
+        psychologicalIssues: undefined,
         psychologicalIssuesDesc: "",
-        pacemaker: false,
-        infectiousDisease: false,
+        pacemaker: undefined,
+        infectiousDisease: undefined,
         infectiousDiseaseDesc: "",
-        otherHealthIssues: false,
+        otherHealthIssues: undefined,
         otherHealthIssuesDesc: "",
         additionalHealthInfo: "",
 
+        // Saúde Bucal
         lastDentalVisit: "",
         lastTreatment: "",
-        anesthesia: false,
-        anesthesiaReaction: false,
-        bleedingAfterExtraction: false,
+        anesthesia: undefined,
+        anesthesiaReaction: undefined,
+        bleedingAfterExtraction: undefined,
         brushingFrequency: "",
-        mouthwash: false,
-        teethGrinding: false,
-        coffeeTea: false,
-        bleedingGums: false,
-        jawPain: false,
-        mouthBreathing: false,
-        dentalFloss: false,
-        tongueCleaning: false,
-        sweets: false,
+        mouthwash: undefined,
+        teethGrinding: undefined,
+        coffeeTea: undefined,
+        bleedingGums: undefined,
+        jawPain: undefined,
+        mouthBreathing: undefined,
+        dentalFloss: undefined,
+        tongueCleaning: undefined,
+        sweets: undefined,
         additionalDentalInfo: "",
       }
 
@@ -472,11 +461,13 @@ export default function AnamnesisForm({
           name={fieldId}
           render={({ field }) => (
             <FormItem className="space-y-3">
-              <FormLabel>{item.question}</FormLabel>
+              <FormLabel>
+                {item.question} <span className="text-red-500">*</span>
+              </FormLabel>
               <FormControl>
                 <RadioGroup
                   onValueChange={(value) => field.onChange(value === "true")}
-                  defaultValue={field.value ? "true" : "false"}
+                  value={field.value === undefined ? "" : field.value ? "true" : "false"}
                   className="flex space-x-4"
                 >
                   <FormItem className="flex items-center space-x-2 space-y-0">
@@ -582,6 +573,12 @@ export default function AnamnesisForm({
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
+
+            <div className="text-sm text-gray-500 mb-4">
+              <p>
+                Campos marcados com <span className="text-red-500">*</span> são obrigatórios
+              </p>
+            </div>
 
             <Button type="submit" className="w-full" disabled={isSaving}>
               {isSaving ? "Salvando..." : "Salvar Anamnese"}

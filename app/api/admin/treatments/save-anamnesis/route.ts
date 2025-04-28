@@ -1,12 +1,59 @@
 import { NextResponse } from "next/server"
 import { createServerSupabaseClient } from "@/lib/supabase"
 
+// List of required boolean fields that must be answered
+const requiredBooleanFields = [
+  "medicalTreatment",
+  "medication",
+  "allergy",
+  "pregnant",
+  "breastfeeding",
+  "smoker",
+  "osteoporosis",
+  "alcohol",
+  "diabetes",
+  "surgery",
+  "bleedingHealingIssues",
+  "bloodTransfusion",
+  "hypertension",
+  "asthma",
+  "psychologicalIssues",
+  "pacemaker",
+  "infectiousDisease",
+  "otherHealthIssues",
+  "anesthesia",
+  "anesthesiaReaction",
+  "bleedingAfterExtraction",
+  "mouthwash",
+  "teethGrinding",
+  "coffeeTea",
+  "bleedingGums",
+  "jawPain",
+  "mouthBreathing",
+  "dentalFloss",
+  "tongueCleaning",
+  "sweets",
+]
+
 export async function POST(request: Request) {
   try {
     const data = await request.json()
 
     if (!data.treatmentId) {
       return NextResponse.json({ error: "ID do tratamento é obrigatório" }, { status: 400 })
+    }
+
+    // Validate that all required boolean fields are present and are actual booleans
+    const missingFields = requiredBooleanFields.filter((field) => typeof data[field] !== "boolean")
+
+    if (missingFields.length > 0) {
+      return NextResponse.json(
+        {
+          error: "Todos os campos de sim/não devem ser respondidos",
+          missingFields,
+        },
+        { status: 400 },
+      )
     }
 
     const supabase = createServerSupabaseClient()

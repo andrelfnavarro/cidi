@@ -31,8 +31,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Erro ao atualizar dentista" }, { status: 500 })
     }
 
-    // Update password if provided
-    if (data.password) {
+    // Update password if provided and not empty
+    if (data.password && data.password.trim() !== "") {
       const { error: authError } = await supabase.auth.admin.updateUserById(data.id, {
         password: data.password,
       })

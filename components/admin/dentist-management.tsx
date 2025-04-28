@@ -16,14 +16,31 @@ import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { listDentists, registerDentist, updateDentist, deleteDentist } from "@/lib/api"
 
-// Dentist schema
-const dentistSchema = z.object({
+// Create a base schema for common fields
+const baseDentistSchema = {
   name: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
   email: z.string().email({ message: "Email inválido" }),
-  password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }).optional(),
   specialty: z.string().optional(),
   registration_number: z.string().optional(),
   is_admin: z.boolean().default(false),
+}
+
+// Schema for creating a new dentist (password required)
+const newDentistSchema = z.object({
+  ...baseDentistSchema,
+  password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
+})
+
+// Schema for editing an existing dentist (password optional)
+const editDentistSchema = z.object({
+  ...baseDentistSchema,
+  password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }).optional().or(z.literal("")),
+})
+
+// Combined schema that will be used based on whether we're editing or creating
+const dentistSchema = z.object({
+  ...baseDentistSchema,
+  password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }).optional(),
 })
 
 type Dentist = {
@@ -46,7 +63,7 @@ export default function DentistManagement() {
 
   // Dentist form
   const form = useForm<z.infer<typeof dentistSchema>>({
-    resolver: zodResolver(dentistSchema),
+    resolver: zodResolver(editingDentist ? editDentistSchema : newDentistSchema),
     defaultValues: {
       name: "",
       email: "",
@@ -82,7 +99,7 @@ export default function DentistManagement() {
     if (currentDentist?.is_admin) {
       fetchDentists()
     }
-  }, []) // Empty dependency array to run only once on mount
+  }, [currentDentist?.is_admin])
 
   // Reset form when editing dentist changes
   useEffect(() => {
@@ -105,7 +122,7 @@ export default function DentistManagement() {
         is_admin: false,
       })
     }
-  }, [editingDentist, form]) // Only depend on editingDentist and form
+  }, [editingDentist, form])
 
   // Handle form submission
   const onSubmit = async (data: z.infer<typeof dentistSchema>) => {
@@ -115,14 +132,21 @@ export default function DentistManagement() {
 
       if (editingDentist) {
         // Update existing dentist
-        await updateDentist({
+        // Only include password if it's not empty
+        const updateData = {
           id: editingDentist.id,
           name: data.name,
           specialty: data.specialty || null,
           registration_number: data.registration_number || null,
           is_admin: data.is_admin,
-          password: data.password || undefined,
-        })
+        }
+
+        // Only add password if it's provided
+        if (data.password && data.password.trim() !== "") {
+          Object.assign(updateData, { password: data.password })
+        }
+
+        await updateDentist(updateData)
 
         toast({
           title: "Dentista atualizado",

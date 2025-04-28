@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
 import { createClientSupabaseClient } from "@/lib/supabase"
@@ -19,9 +20,13 @@ const profileSchema = z
     name: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
     specialty: z.string().optional(),
     registration_number: z.string().optional(),
-    current_password: z.string().min(1, { message: "Senha atual é obrigatória para alterar a senha" }).optional(),
-    new_password: z.string().min(6, { message: "Nova senha deve ter pelo menos 6 caracteres" }).optional(),
-    confirm_password: z.string().optional(),
+    current_password: z.string().optional().or(z.literal("")),
+    new_password: z
+      .string()
+      .min(6, { message: "Nova senha deve ter pelo menos 6 caracteres" })
+      .optional()
+      .or(z.literal("")),
+    confirm_password: z.string().optional().or(z.literal("")),
   })
   .refine(
     (data) => {
@@ -53,6 +58,7 @@ const profileSchema = z
 
 export default function DentistProfile() {
   const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const { dentist, refreshDentistProfile } = useAuth()
   const { toast } = useToast()
   const supabase = createClientSupabaseClient()
@@ -74,9 +80,55 @@ export default function DentistProfile() {
   const onSubmit = async (data: z.infer<typeof profileSchema>) => {
     try {
       setIsSaving(true)
+      setError(null)
 
       if (!dentist) {
         throw new Error("Perfil de dentista não encontrado")
+      }
+
+      // Check if we're trying to update the password
+      const passwordUpdateRequested = !!(data.current_password && data.new_password && data.confirm_password)
+
+      // If password update is requested, handle it first
+      if (passwordUpdateRequested) {
+        // Step 1: Verify current password
+        const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
+          email: dentist.email,
+          password: data.current_password!,
+        })
+
+        if (signInError || !authData.user) {
+          toast({
+            title: "Senha incorreta",
+            description: "A senha atual informada está incorreta. Por favor, verifique e tente novamente.",
+            variant: "destructive",
+          })
+          setError("Senha atual incorreta. Por favor, verifique e tente novamente.")
+          setIsSaving(false)
+          return
+        }
+
+        // Step 2: Update password
+        const { error: passwordError } = await supabase.auth.updateUser({
+          password: data.new_password!,
+        })
+
+        if (passwordError) {
+          toast({
+            title: "Erro ao atualizar senha",
+            description: passwordError.message,
+            variant: "destructive",
+          })
+          setError(`Erro ao atualizar senha: ${passwordError.message}`)
+          setIsSaving(false)
+          return
+        }
+
+        // Password updated successfully, now update profile
+        toast({
+          title: "Senha atualizada",
+          description: "Sua senha foi atualizada com sucesso.",
+        })
       }
 
       // Update profile data
@@ -91,20 +143,15 @@ export default function DentistProfile() {
         .eq("id", dentist.id)
 
       if (updateError) {
-        throw updateError
-      }
-
-      // Update password if provided
-      if (data.current_password && data.new_password) {
-        const { error: passwordError } = await supabase.auth.updateUser({
-          password: data.new_password,
+        toast({
+          title: "Erro ao atualizar perfil",
+          description: updateError.message,
+          variant: "destructive",
         })
-
-        if (passwordError) {
-          throw passwordError
-        }
+        throw new Error(`Erro ao atualizar perfil: ${updateError.message}`)
       }
 
+      // Show success message for profile update
       toast({
         title: "Perfil atualizado",
         description: "Suas informações foram atualizadas com sucesso.",
@@ -119,11 +166,17 @@ export default function DentistProfile() {
       await refreshDentistProfile()
     } catch (error) {
       console.error("Error updating profile:", error)
-      toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao atualizar perfil. Tente novamente.",
-        variant: "destructive",
-      })
+      const errorMessage = error instanceof Error ? error.message : "Erro ao atualizar perfil. Tente novamente."
+      setError(errorMessage)
+
+      // Only show toast if we haven't already shown one for a specific error
+      if (!errorMessage.includes("Senha atual incorreta") && !errorMessage.includes("Erro ao atualizar senha")) {
+        toast({
+          title: "Erro",
+          description: errorMessage,
+          variant: "destructive",
+        })
+      }
     } finally {
       setIsSaving(false)
     }
@@ -140,6 +193,13 @@ export default function DentistProfile() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-blue-800 md:text-3xl">Meu Perfil</h1>
+
+      {error && (
+        <Alert variant="destructive">
+          <AlertTitle>Erro</AlertTitle>
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
       <Card>
         <CardHeader>
@@ -194,7 +254,10 @@ export default function DentistProfile() {
               </div>
 
               <div className="rounded-lg border p-4">
-                <h3 className="mb-4 font-medium">Alterar Senha</h3>
+                <h3 className="mb-4 font-medium">Alterar Senha (Opcional)</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Deixe os campos abaixo em branco se não desejar alterar sua senha.
+                </p>
                 <div className="space-y-4">
                   <FormField
                     control={form.control}

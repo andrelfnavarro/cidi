@@ -350,3 +350,26 @@ export async function deleteDentist(id: string): Promise<any> {
     throw error
   }
 }
+
+// Função para busca avançada de pacientes
+export async function advancedSearchPatients(searchTerm: string): Promise<any[]> {
+  try {
+    const response = await fetch("/api/admin/advanced-search-patient", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ searchTerm }),
+    })
+
+    if (!response.ok) {
+      throw new Error("Erro ao buscar pacientes")
+    }
+
+    const data = await response.json()
+    return data.patients || []
+  } catch (error) {
+    console.error("Erro ao buscar pacientes:", error)
+    throw error
+  }
+}

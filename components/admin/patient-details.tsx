@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useToast } from "@/hooks/use-toast"
 import { getPatientById, createTreatment, listTreatments } from "@/lib/api"
+import { formatCPF, formatPhone } from "@/lib/format-utils"
 import TreatmentsList from "@/components/admin/treatments-list"
 
 export default function PatientDetails({ patientId }: { patientId: string }) {
@@ -111,7 +112,7 @@ export default function PatientDetails({ patientId }: { patientId: string }) {
 
       <div>
         <h1 className="text-2xl font-bold text-blue-800 md:text-3xl">{patient.name}</h1>
-        <p className="text-gray-600">CPF: {patient.cpf}</p>
+        <p className="text-gray-600">CPF: {formatCPF(patient.cpf)}</p>
       </div>
 
       <Tabs defaultValue="info">
@@ -139,7 +140,7 @@ export default function PatientDetails({ patientId }: { patientId: string }) {
                         <span className="font-medium">Email:</span> {patient.email}
                       </p>
                       <p>
-                        <span className="font-medium">Telefone:</span> {patient.phone}
+                        <span className="font-medium">Telefone:</span> {formatPhone(patient.phone)}
                       </p>
                       <p>
                         <span className="font-medium">Data de Nascimento:</span> {formattedBirthDate}

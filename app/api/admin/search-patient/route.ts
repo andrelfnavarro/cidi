@@ -9,13 +9,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "CPF é obrigatório" }, { status: 400 })
     }
 
-    // Remover formatação do CPF para garantir consistência
-    const formattedCpf = cpf.replace(/[^\d]/g, "").replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
+    // Normalize CPF by removing all non-digit characters
+    const normalizedCpf = cpf.replace(/\D/g, "")
 
     const supabase = createServerSupabaseClient()
 
     // Buscar paciente pelo CPF
-    const { data, error } = await supabase.from("patients").select("*").eq("cpf", formattedCpf).single()
+    const { data, error } = await supabase.from("patients").select("*").eq("cpf", normalizedCpf).single()
 
     if (error) {
       if (error.code === "PGRST116") {

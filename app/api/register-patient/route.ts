@@ -15,12 +15,16 @@ export async function POST(request: Request) {
     // Converter string "true"/"false" para boolean
     const hasInsurance = patientData.hasInsurance === "true"
 
+    // Normalize CPF and phone by removing all non-digit characters
+    const normalizedCpf = patientData.cpf.replace(/\D/g, "")
+    const normalizedPhone = patientData.phone ? patientData.phone.replace(/\D/g, "") : null
+
     // Preparar dados para inserção
     const patientRecord = {
-      cpf: patientData.cpf,
+      cpf: normalizedCpf,
       name: patientData.name,
       email: patientData.email,
-      phone: patientData.phone,
+      phone: normalizedPhone,
       street: patientData.street,
       zip_code: patientData.zipCode,
       city: patientData.city,

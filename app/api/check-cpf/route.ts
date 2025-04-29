@@ -9,13 +9,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "CPF é obrigatório" }, { status: 400 })
     }
 
-    // Remover formatação do CPF para garantir consistência
-    const formattedCpf = cpf.replace(/[^\d]/g, "").replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
+    // Normalize CPF by removing all non-digit characters
+    const normalizedCpf = cpf.replace(/\D/g, "")
 
     const supabase = createServerSupabaseClient()
 
     // Verificar se o CPF já existe no banco de dados
-    const { data, error } = await supabase.from("patients").select("id").eq("cpf", formattedCpf).maybeSingle()
+    const { data, error } = await supabase.from("patients").select("id").eq("cpf", normalizedCpf).maybeSingle()
 
     if (error) {
       console.error("Erro ao verificar CPF:", error)

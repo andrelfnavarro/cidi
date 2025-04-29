@@ -22,10 +22,11 @@ const cpfSchema = z.object({
     .min(11, { message: "CPF deve ter 11 dígitos" })
     .max(14, { message: "CPF deve ter no máximo 14 caracteres" })
     .refine(
-      (value) =>
-        /^(\d{3}\.?\d{3}\.?\d{3}-?\d{2})$/.test(
-          value.replace(/[^\d]/g, "").replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4"),
-        ),
+      (value) => {
+        // Remove non-digits for validation
+        const digits = value.replace(/\D/g, "")
+        return digits.length === 11
+      },
       {
         message: "CPF inválido",
       },
@@ -100,17 +101,17 @@ export default function PatientForm() {
   const onCPFSubmit = async (data: z.infer<typeof cpfSchema>) => {
     try {
       setIsLoading(true)
-      // Format CPF to standard format
-      const formattedCPF = data.cpf.replace(/[^\d]/g, "").replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
+      // Normalize CPF by removing non-digits
+      const normalizedCPF = data.cpf.replace(/\D/g, "")
 
       // Check if CPF exists in the system
-      const exists = await checkCPF(formattedCPF)
+      const exists = await checkCPF(normalizedCPF)
 
       if (exists) {
         setStep("exists")
       } else {
         // Set CPF in the full registration form
-        patientForm.setValue("cpf", formattedCPF)
+        patientForm.setValue("cpf", normalizedCPF)
         setStep("register")
       }
     } catch (error) {
@@ -136,6 +137,8 @@ export default function PatientForm() {
       const patientData = {
         ...data,
         birthDate: birthDateString,
+        // Normalize phone by removing non-digits
+        phone: data.phone.replace(/\D/g, ""),
       }
 
       // Remove the separate date fields before sending to the API
@@ -164,7 +167,7 @@ export default function PatientForm() {
     }
   }
 
-  // Format CPF as user types
+  // Format CPF as user types (for display only)
   const formatCPF = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, "")
     if (value.length <= 11) {
@@ -173,7 +176,7 @@ export default function PatientForm() {
     }
   }
 
-  // Format phone number as user types
+  // Format phone number as user types (for display only)
   const formatPhone = (e: React.ChangeEvent<HTMLInputElement>) => {
     let value = e.target.value.replace(/\D/g, "")
     if (value.length <= 11) {

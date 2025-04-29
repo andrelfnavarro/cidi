@@ -11,15 +11,29 @@ export async function GET(request: Request, { params }: { params: { id: string }
 
     const supabase = createServerSupabaseClient()
 
-    // Buscar tratamento pelo ID
+    // Buscar tratamento pelo ID com informações de dentistas
     const { data: treatment, error: treatmentError } = await supabase
       .from("treatments")
       .select(`
         *,
         patients!treatments_patient_id_fkey(id, name, cpf),
-        anamnesis(*),
-        treatment_items(*),
-        treatment_payment(*)
+        anamnesis(
+          *,
+          created_by_dentist:created_by(id, name),
+          updated_by_dentist:updated_by(id, name)
+        ),
+        treatment_items(
+          *,
+          created_by_dentist:created_by(id, name),
+          updated_by_dentist:updated_by(id, name)
+        ),
+        treatment_payment(
+          *,
+          created_by_dentist:created_by(id, name),
+          updated_by_dentist:updated_by(id, name)
+        ),
+        created_by_dentist:created_by(id, name),
+        updated_by_dentist:updated_by(id, name)
       `)
       .eq("id", id)
       .single()
@@ -28,17 +42,6 @@ export async function GET(request: Request, { params }: { params: { id: string }
       console.error("Erro ao buscar tratamento:", treatmentError)
       return NextResponse.json({ error: "Erro ao buscar tratamento" }, { status: 500 })
     }
-
-    // Log the treatment data to debug
-    console.log(
-      "Treatment data from database:",
-      JSON.stringify({
-        id: treatment.id,
-        payment_data_exists: treatment.treatment_payment && treatment.treatment_payment.length > 0,
-        payment_data:
-          treatment.treatment_payment && treatment.treatment_payment.length > 0 ? treatment.treatment_payment[0] : null,
-      }),
-    )
 
     return NextResponse.json({ treatment })
   } catch (error) {

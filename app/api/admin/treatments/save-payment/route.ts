@@ -11,6 +11,16 @@ export async function POST(request: Request) {
 
     const supabase = createServerSupabaseClient()
 
+    // Get authenticated user
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 })
+    }
+
+    const dentistId = session.user.id
+
     // Verificar se já existe um registro de pagamento
     const { data: existingPayment, error: checkError } = await supabase
       .from("treatment_payment")
@@ -33,6 +43,7 @@ export async function POST(request: Request) {
       installments: installments || 1,
       payment_date: paymentDate ? new Date(paymentDate).toISOString() : null,
       updated_at: new Date().toISOString(),
+      updated_by: dentistId,
     }
 
     // Atualizar registro de pagamento
@@ -46,6 +57,15 @@ export async function POST(request: Request) {
       console.error("Erro ao atualizar pagamento:", error)
       return NextResponse.json({ error: "Erro ao atualizar pagamento" }, { status: 500 })
     }
+
+    // Update the treatment's updated_by field
+    await supabase
+      .from("treatments")
+      .update({
+        updated_at: new Date().toISOString(),
+        updated_by: dentistId,
+      })
+      .eq("id", treatmentId)
 
     return NextResponse.json({ success: true, payment: data[0] })
   } catch (error) {

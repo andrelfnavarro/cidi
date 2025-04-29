@@ -79,6 +79,14 @@ export default function TreatmentsList({
                 <div>
                   <p className="font-medium">Tratamento de {formattedDate}</p>
                   <p className="text-sm text-gray-500">ID: {treatment.id}</p>
+                  {treatment.created_by_dentist && (
+                    <p className="text-xs text-gray-500">Criado por: {treatment.created_by_dentist.name}</p>
+                  )}
+                  {treatment.updated_by_dentist &&
+                    treatment.updated_at &&
+                    treatment.created_at !== treatment.updated_at && (
+                      <p className="text-xs text-gray-500">Atualizado por: {treatment.updated_by_dentist.name}</p>
+                    )}
                 </div>
                 <div className="flex items-center space-x-2">
                   {hasPaid && (

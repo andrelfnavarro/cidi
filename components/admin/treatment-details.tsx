@@ -14,6 +14,7 @@ import { getTreatmentById, finalizeTreatment } from "@/lib/api"
 import AnamnesisForm from "@/components/admin/anamnesis-form"
 import PlanningForm from "@/components/admin/planning-form"
 import PaymentForm from "@/components/admin/payment-form"
+import TrackingInfo from "@/components/admin/tracking-info"
 
 export default function TreatmentDetails({ treatmentId }: { treatmentId: string }) {
   const [treatment, setTreatment] = useState<any>(null)
@@ -160,6 +161,15 @@ export default function TreatmentDetails({ treatmentId }: { treatmentId: string 
             </span>
           </div>
         )}
+
+        {/* Treatment tracking info */}
+        <TrackingInfo
+          createdAt={treatment.created_at}
+          updatedAt={treatment.updated_at}
+          createdBy={treatment.created_by_dentist}
+          updatedBy={treatment.updated_by_dentist}
+          className="mt-2"
+        />
       </div>
 
       <Tabs defaultValue="anamnesis">
@@ -175,6 +185,16 @@ export default function TreatmentDetails({ treatmentId }: { treatmentId: string 
             initialData={treatment.anamnesis?.[0]}
             isReadOnly={isTreatmentFinalized && !editMode}
             onSaved={fetchTreatment}
+            trackingInfo={
+              treatment.anamnesis?.[0]
+                ? {
+                    createdAt: treatment.anamnesis[0].created_at,
+                    updatedAt: treatment.anamnesis[0].updated_at,
+                    createdBy: treatment.anamnesis[0].created_by_dentist,
+                    updatedBy: treatment.anamnesis[0].updated_by_dentist,
+                  }
+                : undefined
+            }
           />
         </TabsContent>
 
@@ -184,6 +204,14 @@ export default function TreatmentDetails({ treatmentId }: { treatmentId: string 
             initialItems={treatment.treatment_items}
             isReadOnly={isTreatmentFinalized && !editMode}
             onSaved={fetchTreatment}
+            trackingInfo={
+              treatment.treatment_items?.length > 0
+                ? {
+                    updatedAt: treatment.treatment_items[0].updated_at,
+                    updatedBy: treatment.treatment_items[0].updated_by_dentist,
+                  }
+                : undefined
+            }
           />
         </TabsContent>
 
@@ -193,6 +221,16 @@ export default function TreatmentDetails({ treatmentId }: { treatmentId: string 
             initialData={paymentData}
             isReadOnly={isTreatmentFinalized && !editMode}
             onSaved={fetchTreatment}
+            trackingInfo={
+              paymentData
+                ? {
+                    createdAt: paymentData.created_at,
+                    updatedAt: paymentData.updated_at,
+                    createdBy: paymentData.created_by_dentist,
+                    updatedBy: paymentData.updated_by_dentist,
+                  }
+                : undefined
+            }
           />
         </TabsContent>
       </Tabs>

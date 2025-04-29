@@ -19,6 +19,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { savePayment, getTreatmentById } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import TrackingInfo from "@/components/admin/tracking-info"
 
 // Payment schema
 const paymentSchema = z.object({
@@ -29,17 +30,26 @@ const paymentSchema = z.object({
   paymentDate: z.date().nullable().optional(),
 })
 
+interface PaymentFormProps {
+  treatmentId: string
+  initialData?: any
+  isReadOnly?: boolean
+  onSaved?: () => void
+  trackingInfo?: {
+    createdAt?: string
+    updatedAt?: string
+    createdBy?: { id: string; name: string }
+    updatedBy?: { id: string; name: string }
+  }
+}
+
 export default function PaymentForm({
   treatmentId,
   initialData,
   isReadOnly = false,
   onSaved,
-}: {
-  treatmentId: string
-  initialData?: any
-  isReadOnly?: boolean
-  onSaved?: () => void
-}) {
+  trackingInfo,
+}: PaymentFormProps) {
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [treatmentItems, setTreatmentItems] = useState<any[]>([])
@@ -139,8 +149,20 @@ export default function PaymentForm({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Orçamento</CardTitle>
-          <CardDescription>Informações de pagamento do tratamento</CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>Orçamento</CardTitle>
+              <CardDescription>Informações de pagamento do tratamento</CardDescription>
+            </div>
+            {trackingInfo && (
+              <TrackingInfo
+                createdAt={trackingInfo.createdAt}
+                updatedAt={trackingInfo.updatedAt}
+                createdBy={trackingInfo.createdBy}
+                updatedBy={trackingInfo.updatedBy}
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {treatmentItems.length === 0 ? (
@@ -202,8 +224,24 @@ export default function PaymentForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Orçamento</CardTitle>
-        <CardDescription>Configure as informações de pagamento do tratamento</CardDescription>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle>Orçamento</CardTitle>
+            <CardDescription>
+              {isReadOnly
+                ? "Informações de pagamento do tratamento"
+                : "Configure as informações de pagamento do tratamento"}
+            </CardDescription>
+          </div>
+          {trackingInfo && (
+            <TrackingInfo
+              createdAt={trackingInfo.createdAt}
+              updatedAt={trackingInfo.updatedAt}
+              createdBy={trackingInfo.createdBy}
+              updatedBy={trackingInfo.updatedBy}
+            />
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         {isLoading ? (

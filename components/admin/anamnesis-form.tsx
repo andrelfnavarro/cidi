@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { useToast } from "@/hooks/use-toast"
 import { saveAnamnesis } from "@/lib/api"
+import TrackingInfo from "@/components/admin/tracking-info"
 
 // Definição das seções de anamnese
 const healthSections = {
@@ -213,17 +214,26 @@ const createAnamnesisSchema = () => {
 // Anamnesis schema
 const anamnesisSchema = createAnamnesisSchema()
 
+interface AnamnesisFormProps {
+  treatmentId: string
+  initialData?: any
+  isReadOnly?: boolean
+  onSaved?: () => void
+  trackingInfo?: {
+    createdAt?: string
+    updatedAt?: string
+    createdBy?: { id: string; name: string }
+    updatedBy?: { id: string; name: string }
+  }
+}
+
 export default function AnamnesisForm({
   treatmentId,
   initialData,
   isReadOnly = false,
   onSaved,
-}: {
-  treatmentId: string
-  initialData?: any
-  isReadOnly?: boolean
-  onSaved?: () => void
-}) {
+  trackingInfo,
+}: AnamnesisFormProps) {
   const [isSaving, setIsSaving] = useState(false)
   const { toast } = useToast()
 
@@ -367,8 +377,20 @@ export default function AnamnesisForm({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Anamnese</CardTitle>
-          <CardDescription>Histórico médico e odontológico do paciente</CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>Anamnese</CardTitle>
+              <CardDescription>Histórico médico e odontológico do paciente</CardDescription>
+            </div>
+            {trackingInfo && (
+              <TrackingInfo
+                createdAt={trackingInfo.createdAt}
+                updatedAt={trackingInfo.updatedAt}
+                createdBy={trackingInfo.createdBy}
+                updatedBy={trackingInfo.updatedBy}
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <Accordion type="single" collapsible className="w-full">
@@ -512,8 +534,24 @@ export default function AnamnesisForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Anamnese</CardTitle>
-        <CardDescription>Preencha o histórico médico e odontológico do paciente</CardDescription>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle>Anamnese</CardTitle>
+            <CardDescription>
+              {isReadOnly
+                ? "Histórico médico e odontológico do paciente"
+                : "Preencha o histórico médico e odontológico do paciente"}
+            </CardDescription>
+          </div>
+          {trackingInfo && (
+            <TrackingInfo
+              createdAt={trackingInfo.createdAt}
+              updatedAt={trackingInfo.updatedAt}
+              createdBy={trackingInfo.createdBy}
+              updatedBy={trackingInfo.updatedBy}
+            />
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <Form {...form}>

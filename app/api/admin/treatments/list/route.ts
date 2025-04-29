@@ -16,7 +16,9 @@ export async function POST(request: Request) {
       .from("treatments")
       .select(`
         *,
-        treatment_payment(*)
+        treatment_payment(*),
+        created_by_dentist:created_by(id, name),
+        updated_by_dentist:updated_by(id, name)
       `)
       .eq("patient_id", patientId)
       .order("created_at", { ascending: false })

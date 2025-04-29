@@ -18,6 +18,7 @@ import { Calendar } from "@/components/ui/calendar"
 import { useToast } from "@/hooks/use-toast"
 import { savePlanning } from "@/lib/api"
 import { cn } from "@/lib/utils"
+import TrackingInfo from "@/components/admin/tracking-info"
 
 // Schema for a single treatment item
 const treatmentItemSchema = z.object({
@@ -33,17 +34,26 @@ const planningSchema = z.object({
   items: z.array(treatmentItemSchema),
 })
 
+interface PlanningFormProps {
+  treatmentId: string
+  initialItems?: any[]
+  isReadOnly?: boolean
+  onSaved?: () => void
+  trackingInfo?: {
+    createdAt?: string
+    updatedAt?: string
+    createdBy?: { id: string; name: string }
+    updatedBy?: { id: string; name: string }
+  }
+}
+
 export default function PlanningForm({
   treatmentId,
   initialItems = [],
   isReadOnly = false,
   onSaved,
-}: {
-  treatmentId: string
-  initialItems?: any[]
-  isReadOnly?: boolean
-  onSaved?: () => void
-}) {
+  trackingInfo,
+}: PlanningFormProps) {
   const [isSaving, setIsSaving] = useState(false)
   const { toast } = useToast()
 
@@ -128,8 +138,20 @@ export default function PlanningForm({
     return (
       <Card>
         <CardHeader>
-          <CardTitle>Odontograma e Planejamento</CardTitle>
-          <CardDescription>Procedimentos planejados para o tratamento</CardDescription>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>Odontograma e Planejamento</CardTitle>
+              <CardDescription>Procedimentos planejados para o tratamento</CardDescription>
+            </div>
+            {trackingInfo && (
+              <TrackingInfo
+                createdAt={trackingInfo.createdAt}
+                updatedAt={trackingInfo.updatedAt}
+                createdBy={trackingInfo.createdBy}
+                updatedBy={trackingInfo.updatedBy}
+              />
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-6">
           {defaultItems.length === 0 ? (
@@ -191,8 +213,24 @@ export default function PlanningForm({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Odontograma e Planejamento</CardTitle>
-        <CardDescription>Adicione os procedimentos planejados para o tratamento</CardDescription>
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle>Odontograma e Planejamento</CardTitle>
+            <CardDescription>
+              {isReadOnly
+                ? "Procedimentos planejados para o tratamento"
+                : "Adicione os procedimentos planejados para o tratamento"}
+            </CardDescription>
+          </div>
+          {trackingInfo && (
+            <TrackingInfo
+              createdAt={trackingInfo.createdAt}
+              updatedAt={trackingInfo.updatedAt}
+              createdBy={trackingInfo.createdBy}
+              updatedBy={trackingInfo.updatedBy}
+            />
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="mb-6">

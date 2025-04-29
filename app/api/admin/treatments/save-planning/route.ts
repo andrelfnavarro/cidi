@@ -11,6 +11,16 @@ export async function POST(request: Request) {
 
     const supabase = createServerSupabaseClient()
 
+    // Get authenticated user
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 })
+    }
+
+    const dentistId = session.user.id
+
     // Primeiro, excluir itens existentes para este tratamento
     const { error: deleteError } = await supabase.from("treatment_items").delete().eq("treatment_id", treatmentId)
 
@@ -32,6 +42,8 @@ export async function POST(request: Request) {
       procedure_value: item.procedureValue,
       insurance_coverage: item.insuranceCoverage,
       conclusion_date: item.conclusionDate ? new Date(item.conclusionDate).toISOString() : null,
+      created_by: dentistId,
+      updated_by: dentistId,
     }))
 
     const { data, error } = await supabase.from("treatment_items").insert(itemsToInsert).select()
@@ -64,6 +76,7 @@ export async function POST(request: Request) {
         .update({
           total_value: totalValue,
           updated_at: new Date().toISOString(),
+          updated_by: dentistId,
         })
         .eq("id", existingPayment.id)
     } else {
@@ -75,8 +88,19 @@ export async function POST(request: Request) {
         payment_date: null,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
+        created_by: dentistId,
+        updated_by: dentistId,
       })
     }
+
+    // Update the treatment's updated_by field
+    await supabase
+      .from("treatments")
+      .update({
+        updated_at: new Date().toISOString(),
+        updated_by: dentistId,
+      })
+      .eq("id", treatmentId)
 
     return NextResponse.json({ success: true, items: data })
   } catch (error) {

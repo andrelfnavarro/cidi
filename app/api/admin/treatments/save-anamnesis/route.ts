@@ -58,10 +58,20 @@ export async function POST(request: Request) {
 
     const supabase = createServerSupabaseClient()
 
+    // Get authenticated user
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
+    if (!session?.user) {
+      return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 })
+    }
+
+    const dentistId = session.user.id
+
     // Verificar se já existe anamnese para este tratamento
     const { data: existingAnamnesis, error: checkError } = await supabase
       .from("anamnesis")
-      .select("id")
+      .select("id, created_by")
       .eq("treatment_id", data.treatmentId)
       .maybeSingle()
 
@@ -121,6 +131,7 @@ export async function POST(request: Request) {
       sweets: data.sweets,
       additional_dental_info: data.additionalDentalInfo,
       updated_at: new Date().toISOString(),
+      updated_by: dentistId,
     }
 
     if (existingAnamnesis) {
@@ -144,6 +155,7 @@ export async function POST(request: Request) {
         .insert({
           ...anamnesisRecord,
           created_at: new Date().toISOString(),
+          created_by: dentistId,
         })
         .select()
 

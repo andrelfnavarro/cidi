@@ -1,101 +1,128 @@
-"use client"
+'use client';
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Switch } from "@/components/ui/switch"
-import { useToast } from "@/hooks/use-toast"
-import { getTreatmentById, finalizeTreatment } from "@/lib/api"
-import AnamnesisForm from "@/components/admin/anamnesis-form"
-import PlanningForm from "@/components/admin/planning-form"
-import PaymentForm from "@/components/admin/payment-form"
-import TrackingInfo from "@/components/admin/tracking-info"
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/auth-context';
+import { getTreatmentById, finalizeTreatment } from '@/lib/api';
+import AnamnesisForm from '@/components/admin/anamnesis-form';
+import PlanningForm from '@/components/admin/planning-form';
+import PaymentForm from '@/components/admin/payment-form';
+import TrackingInfo from '@/components/admin/tracking-info';
 
-export default function TreatmentDetails({ treatmentId }: { treatmentId: string }) {
-  const [treatment, setTreatment] = useState<any>(null)
-  const [paymentData, setPaymentData] = useState<any>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [isFinalizing, setIsFinalizing] = useState(false)
-  const [editMode, setEditMode] = useState(false)
-  const router = useRouter()
-  const { toast } = useToast()
+export default function TreatmentDetails({
+  treatmentId,
+}: {
+  treatmentId: string;
+}) {
+  const [treatment, setTreatment] = useState<any>(null);
+  const [paymentData, setPaymentData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isFinalizing, setIsFinalizing] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
+  const { dentist } = useAuth();
 
   // Fetch treatment data
   const fetchTreatment = async () => {
     try {
-      setIsLoading(true)
-      const data = await getTreatmentById(treatmentId)
-      setTreatment(data.treatment)
+      setIsLoading(true);
+      const data = await getTreatmentById(treatmentId);
+      setTreatment(data.treatment);
 
       // Extract payment data
       if (data.treatment?.treatment_payment) {
-        console.log("Raw treatment_payment:", data.treatment.treatment_payment)
+        console.log('Raw treatment_payment:', data.treatment.treatment_payment);
 
         // Check if it's an array with data
-        if (Array.isArray(data.treatment.treatment_payment) && data.treatment.treatment_payment.length > 0) {
-          console.log("Payment data found in array:", data.treatment.treatment_payment[0])
-          setPaymentData(data.treatment.treatment_payment[0])
+        if (
+          Array.isArray(data.treatment.treatment_payment) &&
+          data.treatment.treatment_payment.length > 0
+        ) {
+          console.log(
+            'Payment data found in array:',
+            data.treatment.treatment_payment[0]
+          );
+          setPaymentData(data.treatment.treatment_payment[0]);
         }
         // Check if it's a direct object
-        else if (typeof data.treatment.treatment_payment === "object" && data.treatment.treatment_payment !== null) {
-          console.log("Payment data found as object:", data.treatment.treatment_payment)
-          setPaymentData(data.treatment.treatment_payment)
+        else if (
+          typeof data.treatment.treatment_payment === 'object' &&
+          data.treatment.treatment_payment !== null
+        ) {
+          console.log(
+            'Payment data found as object:',
+            data.treatment.treatment_payment
+          );
+          setPaymentData(data.treatment.treatment_payment);
         } else {
-          console.log("No valid payment data found")
-          setPaymentData(null)
+          console.log('No valid payment data found');
+          setPaymentData(null);
         }
       } else {
-        console.log("No payment data property found")
-        setPaymentData(null)
+        console.log('No payment data property found');
+        setPaymentData(null);
       }
     } catch (error) {
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar os dados do tratamento.",
-        variant: "destructive",
-      })
-      router.push("/admin/pacientes")
+        title: 'Erro',
+        description: 'Não foi possível carregar os dados do tratamento.',
+        variant: 'destructive',
+      });
+      router.push('/admin/pacientes');
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchTreatment()
-  }, [treatmentId, router, toast])
+    fetchTreatment();
+  }, [treatmentId, router, toast]);
 
   // Handle finalize treatment
   const handleFinalizeTreatment = async () => {
-    try {
-      setIsFinalizing(true)
-      await finalizeTreatment(treatmentId)
+    if (!dentist) {
       toast({
-        title: "Tratamento finalizado",
-        description: "O tratamento foi finalizado com sucesso.",
-      })
-      fetchTreatment()
+        title: 'Erro',
+        description: 'Dados do dentista não encontrados. Por favor, faça login novamente.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setIsFinalizing(true);
+      await finalizeTreatment(treatmentId, dentist.id);
+      toast({
+        title: 'Tratamento finalizado',
+        description: 'O tratamento foi finalizado com sucesso.',
+      });
+      fetchTreatment();
     } catch (error) {
       toast({
-        title: "Erro",
-        description: "Não foi possível finalizar o tratamento.",
-        variant: "destructive",
-      })
+        title: 'Erro',
+        description: 'Não foi possível finalizar o tratamento.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsFinalizing(false)
+      setIsFinalizing(false);
     }
-  }
+  };
 
   if (isLoading) {
     return (
       <div className="flex h-[300px] items-center justify-center">
         <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-blue-800"></div>
       </div>
-    )
+    );
   }
 
   if (!treatment) {
@@ -104,48 +131,69 @@ export default function TreatmentDetails({ treatmentId }: { treatmentId: string 
         <CardContent className="p-6">
           <div className="text-center">
             <h2 className="text-xl font-semibold">Tratamento não encontrado</h2>
-            <p className="mt-2 text-gray-600">O tratamento solicitado não foi encontrado no sistema.</p>
-            <Button className="mt-4" onClick={() => router.push("/admin/pacientes")}>
+            <p className="mt-2 text-gray-600">
+              O tratamento solicitado não foi encontrado no sistema.
+            </p>
+            <Button
+              className="mt-4"
+              onClick={() => router.push('/admin/pacientes')}
+            >
               Voltar para busca
             </Button>
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
-  const createdAt = new Date(treatment.created_at)
-  const formattedDate = format(createdAt, "dd/MM/yyyy", { locale: ptBR })
-  const patientName = treatment.patients?.name || "Paciente"
-  const isTreatmentFinalized = treatment.status === "finalizado"
+  const createdAt = new Date(treatment.created_at);
+  const formattedDate = format(createdAt, 'dd/MM/yyyy', { locale: ptBR });
+  const patientName = treatment.patients?.name || 'Paciente';
+  const isTreatmentFinalized = treatment.status === 'finalized';
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <Button variant="outline" size="sm" onClick={() => router.push(`/admin/pacientes/${treatment.patient_id}`)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              router.push(`/admin/pacientes/${treatment.patient_id}`)
+            }
+          >
             ← Voltar para o paciente
           </Button>
         </div>
         <div className="flex items-center gap-4">
           {isTreatmentFinalized && (
             <div className="flex items-center space-x-2">
-              <Switch id="edit-mode" checked={editMode} onCheckedChange={setEditMode} />
+              <Switch
+                id="edit-mode"
+                checked={editMode}
+                onCheckedChange={setEditMode}
+              />
               <label htmlFor="edit-mode" className="text-sm font-medium">
                 Modo de edição
               </label>
             </div>
           )}
           {!isTreatmentFinalized && (
-            <Button variant="default" onClick={handleFinalizeTreatment} disabled={isFinalizing}>
-              {isFinalizing ? "Finalizando..." : "Finalizar Tratamento"}
+            <Button
+              variant="default"
+              onClick={handleFinalizeTreatment}
+              disabled={isFinalizing}
+            >
+              {isFinalizing ? 'Finalizando...' : 'Finalizar Tratamento'}
             </Button>
           )}
         </div>
       </div>
 
       <div>
-        <h1 className="text-2xl font-bold text-blue-800 md:text-3xl">Tratamento de {formattedDate}</h1>
+        <h1 className="text-2xl font-bold text-blue-800 md:text-3xl">
+          Tratamento de {formattedDate}
+        </h1>
         <p className="text-gray-600">Paciente: {patientName}</p>
         {isTreatmentFinalized && !editMode && (
           <div className="mt-2">
@@ -235,5 +283,5 @@ export default function TreatmentDetails({ treatmentId }: { treatmentId: string 
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }

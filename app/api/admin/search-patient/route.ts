@@ -1,35 +1,56 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/server"
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   try {
-    const { cpf } = await request.json()
+    const url = new URL(request.url)
+    const searchTerm = url.searchParams.get("query")
 
-    if (!cpf) {
-      return NextResponse.json({ error: "CPF é obrigatório" }, { status: 400 })
+    if (!searchTerm || searchTerm.trim().length === 0) {
+      return NextResponse.json({ patients: [] })
     }
 
-    // Normalize CPF by removing all non-digit characters
-    const normalizedCpf = cpf.replace(/\D/g, "")
+    // Create the Supabase client using the new SSR integration
+    const supabase = await createClient()
 
-    const supabase = createServerSupabaseClient()
+    // We'll search across multiple fields
+    const normalizedSearch = searchTerm.toLowerCase().trim()
 
-    // Buscar paciente pelo CPF
-    const { data, error } = await supabase.from("patients").select("*").eq("cpf", normalizedCpf).single()
+    // First try to find by exact match on CPF or if is a numeric search
+    const isCPFSearch = normalizedSearch.replace(/\D/g, "").length > 0
 
-    if (error) {
-      if (error.code === "PGRST116") {
-        // Código para "não encontrado" no Supabase
-        return NextResponse.json({ patient: null })
+    if (isCPFSearch) {
+      const { data, error } = await supabase
+        .from("patients")
+        .select("*")
+        .filter("cpf", "ilike", `%${normalizedSearch.replace(/\D/g, "")}%`)
+        .limit(10)
+
+      if (error) {
+        console.error("Error searching patients by CPF:", error)
+        return NextResponse.json({ error: "Error searching patients" }, { status: 500 })
       }
 
-      console.error("Erro ao buscar paciente:", error)
-      return NextResponse.json({ error: "Erro ao buscar paciente" }, { status: 500 })
+      if (data.length > 0) {
+        return NextResponse.json({ patients: data })
+      }
     }
 
-    return NextResponse.json({ patient: data })
+    // If not found by CPF, or not a CPF search, search by name
+    const { data, error } = await supabase
+      .from("patients")
+      .select("*")
+      .ilike("name", `%${normalizedSearch}%`)
+      .limit(10)
+
+    if (error) {
+      console.error("Error searching patients:", error)
+      return NextResponse.json({ error: "Error searching patients" }, { status: 500 })
+    }
+
+    return NextResponse.json({ patients: data })
   } catch (error) {
-    console.error("Erro ao processar requisição:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    console.error("Error processing request:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

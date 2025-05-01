@@ -1,36 +1,44 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/server"
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   try {
-    const { patientId } = await request.json()
+    const url = new URL(request.url)
+    const patientId = url.searchParams.get("patientId")
+    const status = url.searchParams.get("status")
 
-    if (!patientId) {
-      return NextResponse.json({ error: "ID do paciente é obrigatório" }, { status: 400 })
-    }
+    // Create the Supabase client using the new SSR integration
+    const supabase = await createClient()
 
-    const supabase = createServerSupabaseClient()
-
-    // Buscar tratamentos do paciente
-    const { data, error } = await supabase
+    let query = supabase
       .from("treatments")
-      .select(`
+      .select(
+        `
         *,
-        treatment_payment(*),
-        created_by_dentist:created_by(id, name),
-        updated_by_dentist:updated_by(id, name)
-      `)
-      .eq("patient_id", patientId)
+        dentist:dentist_id(name),
+        patient:patient_id(name)
+      `
+      )
       .order("created_at", { ascending: false })
 
-    if (error) {
-      console.error("Erro ao buscar tratamentos:", error)
-      return NextResponse.json({ error: "Erro ao buscar tratamentos" }, { status: 500 })
+    if (patientId) {
+      query = query.eq("patient_id", patientId)
     }
 
-    return NextResponse.json({ treatments: data || [] })
+    if (status) {
+      query = query.eq("status", status)
+    }
+
+    const { data, error } = await query
+
+    if (error) {
+      console.error("Error fetching treatments:", error)
+      return NextResponse.json({ error: "Error fetching treatments" }, { status: 500 })
+    }
+
+    return NextResponse.json({ treatments: data })
   } catch (error) {
-    console.error("Erro ao processar requisição:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    console.error("Error processing request:", error)
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

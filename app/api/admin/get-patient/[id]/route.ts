@@ -1,24 +1,30 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
+import { createClient } from '@/utils/supabase/server';
 
-export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+interface ContextParams {
+  params: {
+    id: string;
+  };
+}
+
+export async function GET(request: Request, context: ContextParams) {
   try {
-    const { id } = await params;
+    const { id } = context.params;
 
     if (!id) {
-      return NextResponse.json(
-        { error: 'ID do paciente é obrigatório' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'ID do paciente não fornecido' }, { status: 400 });
     }
 
-    const supabase = createServerSupabaseClient();
+    // Get the URL parameters
+    const url = new URL(request.url);
+    const includeAnamnesis = url.searchParams.get('includeAnamnesis') === 'true';
+    const includeTreatments = url.searchParams.get('includeTreatments') === 'true';
 
-    // Buscar paciente pelo ID
-    const { data, error } = await supabase
+    // Create the Supabase client using the new SSR integration
+    const supabase = await createClient();
+
+    // Get the patient information
+    const { data: patient, error } = await supabase
       .from('patients')
       .select('*')
       .eq('id', id)
@@ -26,56 +32,47 @@ export async function GET(
 
     if (error) {
       console.error('Erro ao buscar paciente:', error);
-      return NextResponse.json(
-        { error: 'Erro ao buscar paciente' },
-        { status: 500 }
-      );
+      return NextResponse.json({ error: 'Paciente não encontrado' }, { status: 404 });
     }
 
-    // Buscar tratamentos do paciente
-    const { data: treatmentsData, error: treatmentsError } = await supabase
-      .from('treatments')
-      .select('*')
-      .eq('patient_id', id)
-      .order('created_at', { ascending: false })
-      .limit(1);
+    // If we need to include treatments
+    let treatments = null;
+    if (includeTreatments) {
+      const { data: treatmentData, error: treatmentError } = await supabase
+        .from('treatments')
+        .select(`
+          *,
+          dentist:dentist_id(name)
+        `)
+        .eq('patient_id', id)
+        .order('created_at', { ascending: false });
 
-    if (treatmentsError) {
-      console.error('Erro ao buscar tratamentos:', treatmentsError);
-      return NextResponse.json(
-        { error: 'Erro ao buscar tratamentos' },
-        { status: 500 }
-      );
+      if (treatmentError) {
+        console.error('Erro ao buscar tratamentos:', treatmentError);
+      } else {
+        treatments = treatmentData;
+      }
     }
 
-    let anamnesisData = null;
-
-    // Se houver tratamentos, buscar a anamnese do tratamento mais recente
-    if (treatmentsData && treatmentsData.length > 0) {
-      const latestTreatment = treatmentsData[0];
-
-      const { data: anamnesis, error: anamnesisError } = await supabase
-        .from('anamnesis')
-        .select('*')
-        .eq('treatment_id', latestTreatment.id)
-        .single();
-
-      if (anamnesisError && anamnesisError.code !== 'PGRST116') {
-        console.error('Erro ao buscar anamnese:', anamnesisError);
-      } else if (anamnesis) {
-        anamnesisData = anamnesis;
+    // If we need to include anamnesis
+    let anamnesis = null;
+    if (includeAnamnesis && treatments && treatments.length > 0) {
+      // Get the latest treatment that has anamnesis data
+      const latestWithAnamnesis = treatments.find((t: any) => t.anamnesis && Object.keys(t.anamnesis).length > 0);
+      if (latestWithAnamnesis) {
+        anamnesis = latestWithAnamnesis.anamnesis;
       }
     }
 
     return NextResponse.json({
-      patient: data,
-      anamnesis: anamnesisData,
-      treatments: treatmentsData || [],
+      patient,
+      treatments: includeTreatments ? treatments : undefined,
+      anamnesis: includeAnamnesis ? anamnesis : undefined,
     });
   } catch (error) {
-    console.error('Erro ao processar requisição:', error);
+    console.error('Error processing request:', error);
     return NextResponse.json(
-      { error: 'Erro interno do servidor' },
+      { error: 'Internal server error: ' + (error instanceof Error ? error.message : String(error)) },
       { status: 500 }
     );
   }

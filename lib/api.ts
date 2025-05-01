@@ -227,14 +227,18 @@ export async function savePayment(
 }
 
 // Função para finalizar tratamento
-export async function finalizeTreatment(treatmentId: string): Promise<any> {
+export async function finalizeTreatment(treatmentId: string, dentistId: string): Promise<any> {
   try {
     const response = await fetch('/api/admin/treatments/finalize', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ treatmentId }),
+      body: JSON.stringify({ 
+        treatmentId,
+        dentistId,
+        finalized_at: new Date().toISOString() 
+      }),
     });
 
     if (!response.ok) {

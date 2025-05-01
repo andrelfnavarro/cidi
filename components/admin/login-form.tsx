@@ -50,7 +50,7 @@ export default function LoginForm() {
       if (error) {
         if (error.message.includes("não encontrado como dentista")) {
           setLoginError("Sua conta existe, mas não está vinculada a um dentista. Entre em contato com o administrador.")
-
+          
           // Try to get debug info
           try {
             const response = await fetch("/api/admin/debug-auth")
@@ -74,8 +74,8 @@ export default function LoginForm() {
         description: "Bem-vindo ao portal do dentista.",
       })
 
-      // Redirecionar para a página de busca de pacientes
-      router.push("/admin/pacientes")
+      // Force a full refresh to update the session state across the application
+      window.location.href = "/admin/pacientes"
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : "Erro ao fazer login. Tente novamente.")
     } finally {

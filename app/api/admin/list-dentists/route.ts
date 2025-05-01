@@ -1,46 +1,36 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/server"
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const supabase = createServerSupabaseClient()
+    const supabase = await createClient()
 
-    // Get authenticated user
+    // Get the current session to verify the user is authenticated
     const {
       data: { session },
     } = await supabase.auth.getSession()
-    if (!session?.user) {
-      return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 })
+
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Get dentist data to check if admin
-    const { data: dentistData, error: dentistError } = await supabase
+    // Fetch all dentists
+    const { data: dentists, error } = await supabase
       .from("dentists")
-      .select("is_admin")
-      .eq("id", session.user.id)
-      .single()
-
-    if (dentistError) {
-      console.error("Erro ao buscar dentista:", dentistError)
-      return NextResponse.json({ error: "Erro ao buscar dentista" }, { status: 500 })
-    }
-
-    // Check if dentist is admin
-    if (!dentistData.is_admin) {
-      return NextResponse.json({ error: "Acesso não autorizado" }, { status: 403 })
-    }
-
-    // List all dentists
-    const { data, error } = await supabase.from("dentists").select("*").order("name")
+      .select("*")
+      .order("name", { ascending: true })
 
     if (error) {
-      console.error("Erro ao listar dentistas:", error)
-      return NextResponse.json({ error: "Erro ao listar dentistas" }, { status: 500 })
+      console.error("Error fetching dentists:", error)
+      return NextResponse.json({ error: "Error fetching dentists" }, { status: 500 })
     }
 
-    return NextResponse.json({ dentists: data })
+    return NextResponse.json({ dentists })
   } catch (error) {
-    console.error("Erro ao processar requisição:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    console.error("Error in list-dentists:", error)
+    return NextResponse.json(
+      { error: "Internal server error: " + (error instanceof Error ? error.message : String(error)) },
+      { status: 500 }
+    )
   }
 }

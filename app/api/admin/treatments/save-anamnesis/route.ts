@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/server"
 
 // List of required boolean fields that must be answered
 const requiredBooleanFields = [
@@ -56,12 +56,14 @@ export async function POST(request: Request) {
       )
     }
 
-    const supabase = createServerSupabaseClient()
+    // Create the Supabase client using the new SSR integration
+    const supabase = await createClient()
 
     // Get authenticated user
     const {
       data: { session },
     } = await supabase.auth.getSession()
+    
     if (!session?.user) {
       return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 })
     }

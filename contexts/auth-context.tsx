@@ -4,7 +4,7 @@ import type React from "react"
 
 import { createContext, useContext, useEffect, useState } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { createClientSupabaseClient } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/client"
 import type { User } from "@supabase/supabase-js"
 
 type DentistProfile = {
@@ -33,7 +33,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
   const pathname = usePathname()
-  const supabase = createClientSupabaseClient()
+  const supabase = createClient()
 
   // Fetch dentist profile data with better error handling
   const fetchDentistProfile = async (userId: string) => {

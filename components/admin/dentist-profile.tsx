@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/contexts/auth-context"
-import { createClientSupabaseClient } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/client"
 
 // Profile schema
 const profileSchema = z
@@ -61,7 +61,7 @@ export default function DentistProfile() {
   const [error, setError] = useState<string | null>(null)
   const { dentist, refreshDentistProfile } = useAuth()
   const { toast } = useToast()
-  const supabase = createClientSupabaseClient()
+  const supabase = createClient()
 
   // Profile form
   const form = useForm<z.infer<typeof profileSchema>>({
@@ -119,19 +119,18 @@ export default function DentistProfile() {
             description: passwordError.message,
             variant: "destructive",
           })
-          setError(`Erro ao atualizar senha: ${passwordError.message}`)
+          setError(passwordError.message)
           setIsSaving(false)
           return
         }
 
-        // Password updated successfully, now update profile
         toast({
           title: "Senha atualizada",
           description: "Sua senha foi atualizada com sucesso.",
         })
       }
 
-      // Update profile data
+      // Update dentist profile
       const { error: updateError } = await supabase
         .from("dentists")
         .update({
@@ -148,35 +147,30 @@ export default function DentistProfile() {
           description: updateError.message,
           variant: "destructive",
         })
-        throw new Error(`Erro ao atualizar perfil: ${updateError.message}`)
+        setError(updateError.message)
+        setIsSaving(false)
+        return
       }
-
-      // Show success message for profile update
-      toast({
-        title: "Perfil atualizado",
-        description: "Suas informações foram atualizadas com sucesso.",
-      })
 
       // Reset password fields
       form.setValue("current_password", "")
       form.setValue("new_password", "")
       form.setValue("confirm_password", "")
 
-      // Refresh dentist profile
+      // Refresh the dentist profile in the auth context
       await refreshDentistProfile()
-    } catch (error) {
-      console.error("Error updating profile:", error)
-      const errorMessage = error instanceof Error ? error.message : "Erro ao atualizar perfil. Tente novamente."
-      setError(errorMessage)
 
-      // Only show toast if we haven't already shown one for a specific error
-      if (!errorMessage.includes("Senha atual incorreta") && !errorMessage.includes("Erro ao atualizar senha")) {
-        toast({
-          title: "Erro",
-          description: errorMessage,
-          variant: "destructive",
-        })
-      }
+      toast({
+        title: "Perfil atualizado",
+        description: "Suas informações foram atualizadas com sucesso.",
+      })
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: error instanceof Error ? error.message : "Erro ao atualizar perfil. Tente novamente.",
+        variant: "destructive",
+      })
+      setError(error instanceof Error ? error.message : "Erro ao atualizar perfil. Tente novamente.")
     } finally {
       setIsSaving(false)
     }
@@ -184,9 +178,10 @@ export default function DentistProfile() {
 
   if (!dentist) {
     return (
-      <div className="flex justify-center py-8">
-        <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-blue-800"></div>
-      </div>
+      <Alert variant="destructive">
+        <AlertTitle>Erro</AlertTitle>
+        <AlertDescription>Perfil não encontrado. Por favor, faça login novamente.</AlertDescription>
+      </Alert>
     )
   }
 
@@ -204,9 +199,9 @@ export default function DentistProfile() {
       <Card>
         <CardHeader>
           <CardTitle>Informações Pessoais</CardTitle>
-          <CardDescription>Atualize suas informações de perfil</CardDescription>
+          <CardDescription>Atualize suas informações pessoais e credenciais</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField

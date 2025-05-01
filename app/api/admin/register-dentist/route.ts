@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/server"
+import { createServerClient } from '@supabase/ssr'
 
 export async function POST(request: Request) {
   try {
@@ -10,10 +11,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Dados incompletos" }, { status: 400 })
     }
 
-    const supabase = createServerSupabaseClient()
+    // Get the regular client to check user's session
+    const supabase = await createClient()
 
-    // First, create the user in Supabase Auth
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    // First verify if the current user is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession()
+    
+    if (sessionError || !session) {
+      return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
+    }
+
+    // Verify if the current user is an admin
+    const { data: currentDentist, error: dentistError } = await supabase
+      .from("dentists")
+      .select("is_admin")
+      .eq("id", session.user.id)
+      .single()
+
+    if (dentistError || !currentDentist || !currentDentist.is_admin) {
+      return NextResponse.json({ error: "Permissão negada. Apenas administradores podem criar novos dentistas." }, { status: 403 })
+    }
+
+    // Create a special admin client using the service role key for admin operations
+    const adminSupabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        cookies: {
+          // Use dummy cookie handlers since this client doesn't need cookies
+          getAll() { return [] },
+          setAll() {}
+        }
+      }
+    )
+
+    // Now create the user with admin powers
+    const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
       email: data.email,
       password: data.password,
       email_confirm: true,
@@ -27,7 +60,7 @@ export async function POST(request: Request) {
     console.log("Auth user created:", authData.user.id)
 
     // Then, create the dentist record
-    const { data: dentistData, error: dentistError } = await supabase
+    const { data: dentistData, error: dentistError2 } = await supabase
       .from("dentists")
       .insert({
         id: authData.user.id,
@@ -41,13 +74,13 @@ export async function POST(request: Request) {
       })
       .select()
 
-    if (dentistError) {
-      console.error("Erro ao criar dentista:", dentistError)
+    if (dentistError2) {
+      console.error("Erro ao criar dentista:", dentistError2)
 
       // If there's an error creating the dentist record, delete the auth user
-      await supabase.auth.admin.deleteUser(authData.user.id)
+      await adminSupabase.auth.admin.deleteUser(authData.user.id)
 
-      return NextResponse.json({ error: "Erro ao criar dentista: " + dentistError.message }, { status: 500 })
+      return NextResponse.json({ error: "Erro ao criar dentista: " + dentistError2.message }, { status: 500 })
     }
 
     console.log("Dentist record created successfully")

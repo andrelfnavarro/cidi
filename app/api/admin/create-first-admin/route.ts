@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/server"
 
 export async function POST(request: Request) {
   try {
@@ -9,7 +9,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Dados incompletos" }, { status: 400 })
     }
 
-    const supabase = createServerSupabaseClient()
+    const supabase = await createClient()
 
     // Check if any dentist exists
     const { count, error: countError } = await supabase.from("dentists").select("*", { count: "exact", head: true })
@@ -58,7 +58,10 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ success: true, dentist: dentistData[0] })
   } catch (error) {
-    console.error("Erro ao processar requisição:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    console.error("Error creating first admin:", error)
+    return NextResponse.json(
+      { error: "Erro interno do servidor: " + (error instanceof Error ? error.message : String(error)) },
+      { status: 500 }
+    )
   }
 }

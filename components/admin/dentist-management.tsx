@@ -22,7 +22,7 @@ const baseDentistSchema = {
   email: z.string().email({ message: "Email inválido" }),
   specialty: z.string().optional(),
   registration_number: z.string().optional(),
-  is_admin: z.boolean().default(false),
+  is_admin: z.boolean(), // Make is_admin a required boolean
 }
 
 // Schema for creating a new dentist (password required)
@@ -380,7 +380,7 @@ export default function DentistManagement() {
             <div className="flex justify-center py-8">
               <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-blue-800"></div>
             </div>
-          ) : dentists.length === 0 ? (
+          ) : !dentists || dentists.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-gray-500">Nenhum dentista cadastrado.</p>
             </div>
@@ -413,7 +413,7 @@ export default function DentistManagement() {
                       size="icon"
                       onClick={() => handleDelete(dentist.id)}
                       title="Excluir"
-                      disabled={dentist.id === currentDentist.id}
+                      disabled={currentDentist && dentist.id === currentDentist.id}
                     >
                       <Trash2 className="h-4 w-4 text-red-600" />
                     </Button>

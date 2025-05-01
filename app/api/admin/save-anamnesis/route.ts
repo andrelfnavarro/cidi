@@ -1,76 +1,83 @@
-import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { NextResponse } from 'next/server';
+import { createServerSupabaseClient } from '@/lib/supabase';
 
 // List of required boolean fields that must be answered
 const requiredBooleanFields = [
-  "medicalTreatment",
-  "medication",
-  "allergy",
-  "pregnant",
-  "breastfeeding",
-  "smoker",
-  "osteoporosis",
-  "alcohol",
-  "diabetes",
-  "surgery",
-  "bleedingHealingIssues",
-  "bloodTransfusion",
-  "hypertension",
-  "asthma",
-  "psychologicalIssues",
-  "pacemaker",
-  "infectiousDisease",
-  "otherHealthIssues",
-  "anesthesia",
-  "anesthesiaReaction",
-  "bleedingAfterExtraction",
-  "mouthwash",
-  "teethGrinding",
-  "coffeeTea",
-  "bleedingGums",
-  "jawPain",
-  "mouthBreathing",
-  "dentalFloss",
-  "tongueCleaning",
-  "sweets",
-]
+  'medicalTreatment',
+  'medication',
+  'allergy',
+  'pregnant',
+  'breastfeeding',
+  'smoker',
+  'osteoporosis',
+  'alcohol',
+  'diabetes',
+  'surgery',
+  'bleedingHealingIssues',
+  'bloodTransfusion',
+  'hypertension',
+  'asthma',
+  'psychologicalIssues',
+  'pacemaker',
+  'infectiousDisease',
+  'otherHealthIssues',
+  'anesthesia',
+  'anesthesiaReaction',
+  'bleedingAfterExtraction',
+  'mouthwash',
+  'teethGrinding',
+  'coffeeTea',
+  'bleedingGums',
+  'jawPain',
+  'mouthBreathing',
+  'dentalFloss',
+  'tongueCleaning',
+  'sweets',
+];
 
 export async function POST(request: Request) {
   try {
-    const data = await request.json()
+    const data = await request.json();
 
     if (!data.treatmentId) {
-      return NextResponse.json({ error: "ID do tratamento é obrigatório" }, { status: 400 })
+      return NextResponse.json(
+        { error: 'ID do tratamento é obrigatório' },
+        { status: 400 }
+      );
     }
 
     // Validate that all required boolean fields are present and are actual booleans
-    const missingFields = requiredBooleanFields.filter((field) => typeof data[field] !== "boolean")
+    const missingFields = requiredBooleanFields.filter(
+      field => typeof data[field] !== 'boolean'
+    );
 
     if (missingFields.length > 0) {
       return NextResponse.json(
         {
-          error: "Todos os campos de sim/não devem ser respondidos",
+          error: 'Todos os campos de sim/não devem ser respondidos',
           missingFields,
         },
-        { status: 400 },
-      )
+        { status: 400 }
+      );
     }
 
-    const supabase = createServerSupabaseClient()
+    const supabase = createServerSupabaseClient();
 
-    // Verificar se já existe anamnese para este tratamento
     const { data: existingAnamnesis, error: checkError } = await supabase
-      .from("anamnesis")
-      .select("id")
-      .eq("treatment_id", data.treatmentId)
-      .maybeSingle()
+      .from('anamnesis')
+      .select('id')
+      .eq('treatment_id', data.treatmentId)
+      .maybeSingle();
 
-    if (checkError && checkError.code !== "PGRST116") {
-      console.error("Erro ao verificar anamnese existente:", checkError)
-      return NextResponse.json({ error: "Erro ao verificar anamnese existente" }, { status: 500 })
+    if (checkError && checkError.code !== 'PGRST116') {
+      console.error('Erro ao verificar anamnese existente:', checkError);
+      return NextResponse.json(
+        { error: 'Erro ao verificar anamnese existente' },
+        { status: 500 }
+      );
     }
 
-    let result
+    let result;
 
     // Preparar dados para inserção/atualização
     const anamnesisRecord = {
@@ -121,43 +128,52 @@ export async function POST(request: Request) {
       sweets: data.sweets,
       additional_dental_info: data.additionalDentalInfo,
       updated_at: new Date().toISOString(),
-    }
+    };
 
     if (existingAnamnesis) {
       // Atualizar anamnese existente
       const { data: updateData, error: updateError } = await supabase
-        .from("anamnesis")
+        .from('anamnesis')
         .update(anamnesisRecord)
-        .eq("id", existingAnamnesis.id)
-        .select()
+        .eq('id', existingAnamnesis.id)
+        .select();
 
       if (updateError) {
-        console.error("Erro ao atualizar anamnese:", updateError)
-        return NextResponse.json({ error: "Erro ao atualizar anamnese" }, { status: 500 })
+        console.error('Erro ao atualizar anamnese:', updateError);
+        return NextResponse.json(
+          { error: 'Erro ao atualizar anamnese' },
+          { status: 500 }
+        );
       }
 
-      result = updateData
+      result = updateData;
     } else {
       // Inserir nova anamnese
       const { data: insertData, error: insertError } = await supabase
-        .from("anamnesis")
+        .from('anamnesis')
         .insert({
           ...anamnesisRecord,
           created_at: new Date().toISOString(),
         })
-        .select()
+        .select();
 
       if (insertError) {
-        console.error("Erro ao inserir anamnese:", insertError)
-        return NextResponse.json({ error: "Erro ao inserir anamnese" }, { status: 500 })
+        console.error('Erro ao inserir anamnese:', insertError);
+        return NextResponse.json(
+          { error: 'Erro ao inserir anamnese' },
+          { status: 500 }
+        );
       }
 
-      result = insertData
+      result = insertData;
     }
 
-    return NextResponse.json({ success: true, anamnesis: result[0] })
+    return NextResponse.json({ success: true, anamnesis: result[0] });
   } catch (error) {
-    console.error("Erro ao processar requisição:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    console.error('Erro ao processar requisição:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
   }
 }

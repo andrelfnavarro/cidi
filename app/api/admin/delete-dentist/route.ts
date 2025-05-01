@@ -1,35 +1,63 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/server"
 
 export async function POST(request: Request) {
   try {
     const { id } = await request.json()
 
     if (!id) {
-      return NextResponse.json({ error: "ID do dentista é obrigatório" }, { status: 400 })
+      return NextResponse.json({ error: "ID não fornecido" }, { status: 400 })
     }
 
-    const supabase = createServerSupabaseClient()
+    const supabase = await createClient()
 
-    // Delete dentist profile
-    const { error: dentistError } = await supabase.from("dentists").delete().eq("id", id)
+    // Get the current session to verify the user is authenticated
+    const {
+      data: { session },
+    } = await supabase.auth.getSession()
 
-    if (dentistError) {
-      console.error("Erro ao excluir dentista:", dentistError)
-      return NextResponse.json({ error: "Erro ao excluir dentista" }, { status: 500 })
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Delete auth user
-    const { error: authError } = await supabase.auth.admin.deleteUser(id)
+    // Check if the user is trying to delete themselves
+    if (session.user.id === id) {
+      return NextResponse.json({ error: "Você não pode excluir seu próprio usuário" }, { status: 403 })
+    }
 
-    if (authError) {
-      console.error("Erro ao excluir usuário:", authError)
-      return NextResponse.json({ error: "Erro ao excluir usuário" }, { status: 500 })
+    // Check if the user is admin
+    const { data: currentDentist, error: dentistError } = await supabase
+      .from("dentists")
+      .select("is_admin")
+      .eq("id", session.user.id)
+      .single()
+
+    if (dentistError || !currentDentist || !currentDentist.is_admin) {
+      return NextResponse.json({ error: "Apenas administradores podem excluir dentistas" }, { status: 403 })
+    }
+
+    // Delete the dentist record first
+    const { error: deleteDentistError } = await supabase.from("dentists").delete().eq("id", id)
+
+    if (deleteDentistError) {
+      console.error("Error deleting dentist record:", deleteDentistError)
+      return NextResponse.json({ error: "Erro ao excluir registro de dentista" }, { status: 500 })
+    }
+
+    // Then delete the Auth user
+    const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(id)
+
+    if (deleteAuthError) {
+      console.error("Error deleting Auth user:", deleteAuthError)
+      return NextResponse.json({ error: "Erro ao excluir usuário de autenticação" }, { status: 500 })
     }
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error("Erro ao processar requisição:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    console.error("Error in delete-dentist:", error)
+    return NextResponse.json(
+      { error: "Internal server error: " + (error instanceof Error ? error.message : String(error)) },
+      { status: 500 }
+    )
   }
 }

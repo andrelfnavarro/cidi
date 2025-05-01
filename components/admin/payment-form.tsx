@@ -1,46 +1,69 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { z } from "zod"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { format } from "date-fns"
-import { ptBR } from "date-fns/locale"
-import { CalendarIcon } from "lucide-react"
+import { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { CalendarIcon } from 'lucide-react';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Calendar } from "@/components/ui/calendar"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useToast } from "@/hooks/use-toast"
-import { savePayment, getTreatmentById } from "@/lib/api"
-import { cn } from "@/lib/utils"
-import TrackingInfo from "@/components/admin/tracking-info"
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import { savePayment, getTreatmentById } from '@/lib/api';
+import { cn } from '@/lib/utils';
+import TrackingInfo from '@/components/admin/tracking-info';
 
 // Payment schema
 const paymentSchema = z.object({
-  paymentMethod: z.enum(["credit_card", "debit_card", "boleto", "pix"], {
-    required_error: "Método de pagamento é obrigatório",
+  paymentMethod: z.enum(['credit_card', 'debit_card', 'boleto', 'pix'], {
+    required_error: 'Método de pagamento é obrigatório',
   }),
-  installments: z.string().default("1"),
+  installments: z.string().default('1'),
   paymentDate: z.date().nullable().optional(),
-})
+});
 
 interface PaymentFormProps {
-  treatmentId: string
-  initialData?: any
-  isReadOnly?: boolean
-  onSaved?: () => void
+  treatmentId: string;
+  initialData?: any;
+  isReadOnly?: boolean;
+  onSaved?: () => void;
   trackingInfo?: {
-    createdAt?: string
-    updatedAt?: string
-    createdBy?: { id: string; name: string }
-    updatedBy?: { id: string; name: string }
-  }
+    createdAt?: string;
+    updatedAt?: string;
+    createdBy?: { id: string; name: string };
+    updatedBy?: { id: string; name: string };
+  };
 }
 
 export default function PaymentForm({
@@ -50,101 +73,108 @@ export default function PaymentForm({
   onSaved,
   trackingInfo,
 }: PaymentFormProps) {
-  const [isSaving, setIsSaving] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
-  const [treatmentItems, setTreatmentItems] = useState<any[]>([])
-  const [totalValue, setTotalValue] = useState(0)
-  const { toast } = useToast()
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [treatmentItems, setTreatmentItems] = useState<any[]>([]);
+  const [totalValue, setTotalValue] = useState(0);
+  const { toast } = useToast();
 
-  // Log initialData for debugging
-  console.log("Initial payment data:", initialData)
-
-  // Initialize form with default values
   const form = useForm<z.infer<typeof paymentSchema>>({
     resolver: zodResolver(paymentSchema),
     defaultValues: {
-      paymentMethod: "credit_card",
-      installments: "1",
+      paymentMethod: 'credit_card',
+      installments: '1',
       paymentDate: null,
     },
-  })
+  });
 
   // Buscar dados atualizados do tratamento para garantir que temos os itens mais recentes
   useEffect(() => {
     const fetchTreatmentData = async () => {
       try {
-        setIsLoading(true)
-        const result = await getTreatmentById(treatmentId)
+        setIsLoading(true);
+        const result = await getTreatmentById(treatmentId);
 
         if (result.treatment && result.treatment.treatment_items) {
-          setTreatmentItems(result.treatment.treatment_items)
+          setTreatmentItems(result.treatment.treatment_items);
 
           // Calcular o valor total dos itens particulares
           const total = result.treatment.treatment_items
             .filter((item: any) => !item.insurance_coverage)
-            .reduce((sum: number, item: any) => sum + Number.parseFloat(item.procedure_value || 0), 0)
+            .reduce(
+              (sum: number, item: any) =>
+                sum + Number.parseFloat(item.procedure_value || 0),
+              0
+            );
 
-          setTotalValue(total)
+          setTotalValue(total);
         }
       } catch (error) {
-        console.error("Erro ao buscar dados do tratamento:", error)
+        console.error('Erro ao buscar dados do tratamento:', error);
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
-    }
+    };
 
-    fetchTreatmentData()
-  }, [treatmentId])
+    fetchTreatmentData();
+  }, [treatmentId]);
 
   // Reset form when initialData changes
   useEffect(() => {
     if (initialData) {
-      console.log("Resetting form with:", {
+      console.log('Resetting form with:', {
         paymentMethod: initialData.payment_method,
         installments: initialData.installments?.toString(),
-        paymentDate: initialData.payment_date ? new Date(initialData.payment_date) : null,
-      })
+        paymentDate: initialData.payment_date
+          ? new Date(initialData.payment_date)
+          : null,
+      });
 
       form.reset({
         paymentMethod: initialData.payment_method,
         installments: initialData.installments?.toString(),
-        paymentDate: initialData.payment_date ? new Date(initialData.payment_date) : null,
-      })
+        paymentDate: initialData.payment_date
+          ? new Date(initialData.payment_date)
+          : null,
+      });
     }
-  }, [initialData, form])
+  }, [initialData, form]);
 
   // Handle payment submission
   const onSubmit = async (data: z.infer<typeof paymentSchema>) => {
     try {
-      setIsSaving(true)
-      console.log("Submitting payment data:", data)
+      setIsSaving(true);
+      console.log('Submitting payment data:', data);
 
-      await savePayment(treatmentId, data.paymentMethod, Number.parseInt(data.installments), data.paymentDate)
+      await savePayment(
+        treatmentId,
+        data.paymentMethod,
+        Number.parseInt(data.installments),
+        data.paymentDate
+      );
 
       toast({
-        title: "Pagamento salvo com sucesso!",
-        description: "As informações de pagamento foram atualizadas.",
-      })
+        title: 'Pagamento salvo com sucesso!',
+        description: 'As informações de pagamento foram atualizadas.',
+      });
 
       if (onSaved) {
-        onSaved()
+        onSaved();
       }
     } catch (error) {
       toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao salvar pagamento. Tente novamente.",
-        variant: "destructive",
-      })
+        title: 'Erro',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Erro ao salvar pagamento. Tente novamente.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
-  // Log current form values for debugging
-  const currentValues = form.watch()
-  console.log("Current form values:", currentValues)
-
-  // Renderizar formulário somente para leitura
   if (isReadOnly) {
     return (
       <Card>
@@ -152,7 +182,9 @@ export default function PaymentForm({
           <div className="flex justify-between items-start">
             <div>
               <CardTitle>Orçamento</CardTitle>
-              <CardDescription>Informações de pagamento do tratamento</CardDescription>
+              <CardDescription>
+                Informações de pagamento do tratamento
+              </CardDescription>
             </div>
             {trackingInfo && (
               <TrackingInfo
@@ -167,13 +199,17 @@ export default function PaymentForm({
         <CardContent className="space-y-6">
           {treatmentItems.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-500">Nenhum procedimento planejado para gerar orçamento.</p>
+              <p className="text-gray-500">
+                Nenhum procedimento planejado para gerar orçamento.
+              </p>
             </div>
           ) : (
             <>
               <div className="rounded-lg bg-gray-50 p-4">
                 <p className="font-medium">Valor Total</p>
-                <p className="text-xl font-bold">R$ {(initialData?.total_value || totalValue).toFixed(2)}</p>
+                <p className="text-xl font-bold">
+                  R$ {(initialData?.total_value || totalValue).toFixed(2)}
+                </p>
               </div>
 
               {initialData ? (
@@ -181,19 +217,25 @@ export default function PaymentForm({
                   <div>
                     <p className="font-medium">Método de Pagamento</p>
                     <p>
-                      {initialData.payment_method === "credit_card" && "Cartão de Crédito"}
-                      {initialData.payment_method === "debit_card" && "Cartão de Débito"}
-                      {initialData.payment_method === "boleto" && "Boleto"}
-                      {initialData.payment_method === "pix" && "PIX"}
+                      {initialData.payment_method === 'credit_card' &&
+                        'Cartão de Crédito'}
+                      {initialData.payment_method === 'debit_card' &&
+                        'Cartão de Débito'}
+                      {initialData.payment_method === 'boleto' && 'Boleto'}
+                      {initialData.payment_method === 'pix' && 'PIX'}
                     </p>
                   </div>
 
-                  {(initialData.payment_method === "credit_card" || initialData.payment_method === "boleto") && (
+                  {(initialData.payment_method === 'credit_card' ||
+                    initialData.payment_method === 'boleto') && (
                     <div>
                       <p className="font-medium">Parcelas</p>
                       <p>
-                        {initialData.installments}x de R${" "}
-                        {(Number.parseFloat(initialData.total_value) / initialData.installments).toFixed(2)}
+                        {initialData.installments}x de R${' '}
+                        {(
+                          Number.parseFloat(initialData.total_value) /
+                          initialData.installments
+                        ).toFixed(2)}
                       </p>
                     </div>
                   )}
@@ -202,7 +244,12 @@ export default function PaymentForm({
                     <p className="font-medium">Status do Pagamento</p>
                     {initialData.payment_date ? (
                       <p className="text-green-600 font-medium">
-                        Pago em {format(new Date(initialData.payment_date), "dd/MM/yyyy", { locale: ptBR })}
+                        Pago em{' '}
+                        {format(
+                          new Date(initialData.payment_date),
+                          'dd/MM/yyyy',
+                          { locale: ptBR }
+                        )}
                       </p>
                     ) : (
                       <p className="text-red-600 font-medium">Pendente</p>
@@ -211,14 +258,16 @@ export default function PaymentForm({
                 </div>
               ) : (
                 <div className="text-center py-4">
-                  <p className="text-amber-600">Informações de pagamento não configuradas.</p>
+                  <p className="text-amber-600">
+                    Informações de pagamento não configuradas.
+                  </p>
                 </div>
               )}
             </>
           )}
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
@@ -229,8 +278,8 @@ export default function PaymentForm({
             <CardTitle>Orçamento</CardTitle>
             <CardDescription>
               {isReadOnly
-                ? "Informações de pagamento do tratamento"
-                : "Configure as informações de pagamento do tratamento"}
+                ? 'Informações de pagamento do tratamento'
+                : 'Configure as informações de pagamento do tratamento'}
             </CardDescription>
           </div>
           {trackingInfo && (
@@ -251,7 +300,8 @@ export default function PaymentForm({
         ) : treatmentItems.length === 0 ? (
           <Alert>
             <AlertDescription className="text-center py-4">
-              Primeiro adicione procedimentos no planejamento para gerar um orçamento.
+              Primeiro adicione procedimentos no planejamento para gerar um
+              orçamento.
             </AlertDescription>
           </Alert>
         ) : (
@@ -259,7 +309,9 @@ export default function PaymentForm({
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <div className="rounded-lg bg-gray-50 p-4">
                 <p className="font-medium">Valor Total</p>
-                <p className="text-xl font-bold">R$ {(initialData?.total_value || totalValue).toFixed(2)}</p>
+                <p className="text-xl font-bold">
+                  R$ {(initialData?.total_value || totalValue).toFixed(2)}
+                </p>
               </div>
 
               <FormField
@@ -278,13 +330,17 @@ export default function PaymentForm({
                           <FormControl>
                             <RadioGroupItem value="credit_card" />
                           </FormControl>
-                          <FormLabel className="font-normal">Cartão de Crédito</FormLabel>
+                          <FormLabel className="font-normal">
+                            Cartão de Crédito
+                          </FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-3 space-y-0">
                           <FormControl>
                             <RadioGroupItem value="debit_card" />
                           </FormControl>
-                          <FormLabel className="font-normal">Cartão de Débito</FormLabel>
+                          <FormLabel className="font-normal">
+                            Cartão de Débito
+                          </FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-3 space-y-0">
                           <FormControl>
@@ -305,14 +361,18 @@ export default function PaymentForm({
                 )}
               />
 
-              {(form.watch("paymentMethod") === "credit_card" || form.watch("paymentMethod") === "boleto") && (
+              {(form.watch('paymentMethod') === 'credit_card' ||
+                form.watch('paymentMethod') === 'boleto') && (
                 <FormField
                   control={form.control}
                   name="installments"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Parcelas</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                      >
                         <FormControl>
                           <SelectTrigger>
                             <SelectValue placeholder="Selecione o número de parcelas" />
@@ -320,28 +380,52 @@ export default function PaymentForm({
                         </FormControl>
                         <SelectContent>
                           <SelectItem value="1">
-                            1x de R$ {(initialData?.total_value || totalValue).toFixed(2)}
+                            1x de R${' '}
+                            {(initialData?.total_value || totalValue).toFixed(
+                              2
+                            )}
                           </SelectItem>
                           <SelectItem value="2">
-                            2x de R$ {((initialData?.total_value || totalValue) / 2).toFixed(2)}
+                            2x de R${' '}
+                            {(
+                              (initialData?.total_value || totalValue) / 2
+                            ).toFixed(2)}
                           </SelectItem>
                           <SelectItem value="3">
-                            3x de R$ {((initialData?.total_value || totalValue) / 3).toFixed(2)}
+                            3x de R${' '}
+                            {(
+                              (initialData?.total_value || totalValue) / 3
+                            ).toFixed(2)}
                           </SelectItem>
                           <SelectItem value="4">
-                            4x de R$ {((initialData?.total_value || totalValue) / 4).toFixed(2)}
+                            4x de R${' '}
+                            {(
+                              (initialData?.total_value || totalValue) / 4
+                            ).toFixed(2)}
                           </SelectItem>
                           <SelectItem value="5">
-                            5x de R$ {((initialData?.total_value || totalValue) / 5).toFixed(2)}
+                            5x de R${' '}
+                            {(
+                              (initialData?.total_value || totalValue) / 5
+                            ).toFixed(2)}
                           </SelectItem>
                           <SelectItem value="6">
-                            6x de R$ {((initialData?.total_value || totalValue) / 6).toFixed(2)}
+                            6x de R${' '}
+                            {(
+                              (initialData?.total_value || totalValue) / 6
+                            ).toFixed(2)}
                           </SelectItem>
                           <SelectItem value="10">
-                            10x de R$ {((initialData?.total_value || totalValue) / 10).toFixed(2)}
+                            10x de R${' '}
+                            {(
+                              (initialData?.total_value || totalValue) / 10
+                            ).toFixed(2)}
                           </SelectItem>
                           <SelectItem value="12">
-                            12x de R$ {((initialData?.total_value || totalValue) / 12).toFixed(2)}
+                            12x de R${' '}
+                            {(
+                              (initialData?.total_value || totalValue) / 12
+                            ).toFixed(2)}
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -361,11 +445,16 @@ export default function PaymentForm({
                       <PopoverTrigger asChild>
                         <FormControl>
                           <Button
-                            variant={"outline"}
-                            className={cn("w-full pl-3 text-left font-normal", !field.value && "text-muted-foreground")}
+                            variant={'outline'}
+                            className={cn(
+                              'w-full pl-3 text-left font-normal',
+                              !field.value && 'text-muted-foreground'
+                            )}
                           >
                             {field.value ? (
-                              format(field.value, "dd/MM/yyyy", { locale: ptBR })
+                              format(field.value, 'dd/MM/yyyy', {
+                                locale: ptBR,
+                              })
                             ) : (
                               <span>Pagamento pendente</span>
                             )}
@@ -377,8 +466,8 @@ export default function PaymentForm({
                         <Calendar
                           mode="single"
                           selected={field.value || undefined}
-                          onSelect={(date) => field.onChange(date)}
-                          disabled={(date) => date > new Date()}
+                          onSelect={date => field.onChange(date)}
+                          disabled={date => date > new Date()}
                           initialFocus
                           locale={ptBR}
                         />
@@ -390,12 +479,12 @@ export default function PaymentForm({
               />
 
               <Button type="submit" className="w-full" disabled={isSaving}>
-                {isSaving ? "Salvando..." : "Salvar Informações de Pagamento"}
+                {isSaving ? 'Salvando...' : 'Salvar Informações de Pagamento'}
               </Button>
             </form>
           </Form>
         )}
       </CardContent>
     </Card>
-  )
+  );
 }

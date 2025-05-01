@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
+import { createClient } from "@/utils/supabase/server";
 
 // List of required boolean fields that must be answered
 const requiredBooleanFields = [
@@ -61,7 +61,17 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = createServerSupabaseClient();
+    // Create the Supabase client using the new SSR integration
+    const supabase = await createClient();
+
+    // Get authenticated user - using getUser() for improved security
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 });
+    }
+
+    const dentistId = user.id;
 
     const { data: existingAnamnesis, error: checkError } = await supabase
       .from('anamnesis')
@@ -128,6 +138,7 @@ export async function POST(request: Request) {
       sweets: data.sweets,
       additional_dental_info: data.additionalDentalInfo,
       updated_at: new Date().toISOString(),
+      updated_by: dentistId,
     };
 
     if (existingAnamnesis) {
@@ -154,6 +165,7 @@ export async function POST(request: Request) {
         .insert({
           ...anamnesisRecord,
           created_at: new Date().toISOString(),
+          created_by: dentistId,
         })
         .select();
 

@@ -45,19 +45,68 @@ export async function POST(request: Request) {
       }
     )
 
-    // Now create the user with admin powers
-    const { data: authData, error: authError } = await adminSupabase.auth.admin.createUser({
+    // Try to create the user with admin powers
+    let createUserResponse = await adminSupabase.auth.admin.createUser({
       email: data.email,
       password: data.password,
       email_confirm: true,
     })
 
-    if (authError) {
-      console.error("Erro ao criar usuário:", authError)
-      return NextResponse.json({ error: authError.message }, { status: 500 })
+    // Check if the error is due to the email already existing
+    if (createUserResponse.error && createUserResponse.error.message.includes('email address has already been registered')) {
+      console.log("Email already exists in Auth system. Checking if dentist record exists...")
+      
+      // Check if there's a dentist record with this email
+      const { data: existingDentist } = await supabase
+        .from("dentists")
+        .select("id")
+        .eq("email", data.email)
+        .maybeSingle()
+      
+      if (!existingDentist) {
+        console.log("Email exists in Auth but no dentist record found. Retrieving user and creating dentist record...")
+        
+        // Get the user by email
+        const { data: userData } = await adminSupabase.auth.admin.listUsers({
+          filters: {
+            email: data.email
+          }
+        })
+        
+        if (userData && userData.users && userData.users.length > 0) {
+          const existingUser = userData.users[0]
+          
+          // Use this user for the dentist record
+          createUserResponse = { 
+            data: { user: existingUser },
+            error: null 
+          }
+          
+          // Reset their password
+          await adminSupabase.auth.admin.updateUserById(existingUser.id, {
+            password: data.password
+          })
+          
+          console.log("Found existing auth user, will use it for the new dentist record")
+        }
+      } else {
+        // A dentist record already exists with this email, this is a real conflict
+        return NextResponse.json(
+          { error: "Já existe um dentista cadastrado com este email." }, 
+          { status: 400 }
+        )
+      }
     }
 
-    console.log("Auth user created:", authData.user.id)
+    // Check for errors in user creation
+    if (createUserResponse.error) {
+      console.error("Erro ao criar usuário:", createUserResponse.error)
+      return NextResponse.json({ error: createUserResponse.error.message }, { status: 500 })
+    }
+
+    const authData = createUserResponse.data
+    
+    console.log("Auth user ready:", authData.user.id)
 
     // Then, create the dentist record
     const { data: dentistData, error: dentistError2 } = await supabase

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@/utils/supabase/server"
+import { createServerClient } from '@supabase/ssr'
 
 export async function POST(request: Request) {
   try {
@@ -12,16 +13,14 @@ export async function POST(request: Request) {
     const supabase = await createClient()
 
     // Get the current session to verify the user is authenticated
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
 
-    if (!session) {
+    if (userError || !user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     // Check if the user is trying to delete themselves
-    if (session.user.id === id) {
+    if (user.id === id) {
       return NextResponse.json({ error: "Você não pode excluir seu próprio usuário" }, { status: 403 })
     }
 
@@ -29,11 +28,22 @@ export async function POST(request: Request) {
     const { data: currentDentist, error: dentistError } = await supabase
       .from("dentists")
       .select("is_admin")
-      .eq("id", session.user.id)
+      .eq("id", user.id)
       .single()
 
     if (dentistError || !currentDentist || !currentDentist.is_admin) {
       return NextResponse.json({ error: "Apenas administradores podem excluir dentistas" }, { status: 403 })
+    }
+
+    // Get the dentist email for logging
+    const { data: dentistToDelete } = await supabase
+      .from("dentists")
+      .select("email")
+      .eq("id", id)
+      .single()
+    
+    if (dentistToDelete) {
+      console.log(`Deleting dentist with email: ${dentistToDelete.email}`)
     }
 
     // Delete the dentist record first
@@ -44,12 +54,32 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Erro ao excluir registro de dentista" }, { status: 500 })
     }
 
-    // Then delete the Auth user
-    const { error: deleteAuthError } = await supabase.auth.admin.deleteUser(id)
+    // Create admin client to delete auth user
+    const adminSupabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      {
+        cookies: {
+          // Use dummy cookie handlers since this client doesn't need cookies
+          getAll() { return [] },
+          setAll() {}
+        }
+      }
+    )
+
+    // Then delete the Auth user using the admin client
+    const { error: deleteAuthError } = await adminSupabase.auth.admin.deleteUser(id)
 
     if (deleteAuthError) {
       console.error("Error deleting Auth user:", deleteAuthError)
-      return NextResponse.json({ error: "Erro ao excluir usuário de autenticação" }, { status: 500 })
+      
+      // Even though auth deletion failed, we've already deleted the dentist record
+      // so we'll log the error but still return success
+      console.log("Warning: Dentist record was deleted but auth user deletion failed")
+      return NextResponse.json({ 
+        success: true,
+        warning: "Registro do dentista foi removido, mas houve um erro ao remover o usuário de autenticação." 
+      })
     }
 
     return NextResponse.json({ success: true })

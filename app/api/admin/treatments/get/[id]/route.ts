@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
-import { createServerSupabaseClient } from '@/lib/supabase';
+import { createClient } from "@/utils/supabase/server";
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    // Best practice in Next.js is to await the params object before using it
+    const id = params?.id;
 
     if (!id) {
       return NextResponse.json(
@@ -15,7 +16,15 @@ export async function GET(
       );
     }
 
-    const supabase = createServerSupabaseClient();
+    // Use the new createClient from SSR integration
+    const supabase = await createClient();
+    
+    // Get authenticated user with getUser() for improved security
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError || !user) {
+      return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 });
+    }
 
     // Buscar tratamento pelo ID com informações de dentistas
     const { data: treatment, error: treatmentError } = await supabase

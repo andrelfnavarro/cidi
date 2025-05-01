@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { createServerSupabaseClient } from "@/lib/supabase"
+import { createClient } from "@/utils/supabase/server"
 
 export async function POST(request: Request) {
   try {
@@ -9,17 +9,17 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Dados incompletos" }, { status: 400 })
     }
 
-    const supabase = createServerSupabaseClient()
+    // Create the Supabase client using the new SSR integration
+    const supabase = await createClient()
 
-    // Get authenticated user
-    const {
-      data: { session },
-    } = await supabase.auth.getSession()
-    if (!session?.user) {
+    // Get authenticated user with getUser() for improved security
+    const { data: { user }, error: userError } = await supabase.auth.getUser()
+    
+    if (userError || !user) {
       return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 })
     }
 
-    const dentistId = session.user.id
+    const dentistId = user.id
 
     // Primeiro, excluir itens existentes para este tratamento
     const { error: deleteError } = await supabase.from("treatment_items").delete().eq("treatment_id", treatmentId)

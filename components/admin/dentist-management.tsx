@@ -1,105 +1,134 @@
-"use client"
+'use client';
 
-import { useState, useEffect } from "react"
-import { z } from "zod"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Pencil, Trash2 } from "lucide-react"
+import { useState, useEffect } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Pencil, Trash2 } from 'lucide-react';
 
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { Input } from "@/components/ui/input"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { useToast } from "@/hooks/use-toast"
-import { useAuth } from "@/contexts/auth-context"
-import { listDentists, registerDentist, updateDentist, deleteDentist } from "@/lib/api"
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import {
+  listDentists,
+  registerDentist,
+  updateDentist,
+  deleteDentist,
+} from '@/lib/api';
+import { useDentist } from '@/contexts/dentist-context';
 
 // Create a base schema for common fields
 const baseDentistSchema = {
-  name: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
-  email: z.string().email({ message: "Email inválido" }),
+  name: z.string().min(3, { message: 'Nome deve ter pelo menos 3 caracteres' }),
+  email: z.string().email({ message: 'Email inválido' }),
   specialty: z.string().optional(),
   registration_number: z.string().optional(),
-  is_admin: z.boolean(), // Make is_admin a required boolean
-}
+  is_admin: z.boolean(),
+};
 
 // Schema for creating a new dentist (password required)
 const newDentistSchema = z.object({
   ...baseDentistSchema,
-  password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }),
-})
+  password: z
+    .string()
+    .min(6, { message: 'Senha deve ter pelo menos 6 caracteres' }),
+});
 
 // Schema for editing an existing dentist (password optional)
 const editDentistSchema = z.object({
   ...baseDentistSchema,
-  password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }).optional().or(z.literal("")),
-})
+  password: z
+    .string()
+    .min(6, { message: 'Senha deve ter pelo menos 6 caracteres' })
+    .optional()
+    .or(z.literal('')),
+});
 
 // Combined schema that will be used based on whether we're editing or creating
 const dentistSchema = z.object({
   ...baseDentistSchema,
-  password: z.string().min(6, { message: "Senha deve ter pelo menos 6 caracteres" }).optional(),
-})
+  password: z
+    .string()
+    .min(6, { message: 'Senha deve ter pelo menos 6 caracteres' })
+    .optional(),
+});
 
 type Dentist = {
-  id: string
-  name: string
-  email: string
-  specialty: string | null
-  registration_number: string | null
-  is_admin: boolean
-}
+  id: string;
+  name: string;
+  email: string;
+  specialty: string | null;
+  registration_number: string | null;
+  is_admin: boolean;
+};
 
 export default function DentistManagement() {
-  const [dentists, setDentists] = useState<Dentist[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [editingDentist, setEditingDentist] = useState<Dentist | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const { dentist: currentDentist } = useAuth()
-  const { toast } = useToast()
+  const [dentists, setDentists] = useState<Dentist[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editingDentist, setEditingDentist] = useState<Dentist | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const currentDentist = useDentist();
+  const { toast } = useToast();
 
   // Dentist form
   const form = useForm<z.infer<typeof dentistSchema>>({
-    resolver: zodResolver(editingDentist ? editDentistSchema : newDentistSchema),
+    resolver: zodResolver(
+      editingDentist ? editDentistSchema : newDentistSchema
+    ),
     defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      specialty: "",
-      registration_number: "",
+      name: '',
+      email: '',
+      password: '',
+      specialty: '',
+      registration_number: '',
       is_admin: false,
     },
-  })
+  });
 
   // Fetch dentists
   const fetchDentists = async () => {
     try {
-      setIsLoading(true)
-      setError(null)
-      const { dentists: dentistsList } = await listDentists()
-      setDentists(dentistsList)
+      setIsLoading(true);
+      setError(null);
+      const { dentists: dentistsList } = await listDentists();
+      setDentists(dentistsList);
     } catch (error) {
-      console.error("Error fetching dentists:", error)
-      setError("Não foi possível carregar a lista de dentistas.")
+      console.error('Error fetching dentists:', error);
+      setError('Não foi possível carregar a lista de dentistas.');
       toast({
-        title: "Erro",
-        description: "Não foi possível carregar a lista de dentistas.",
-        variant: "destructive",
-      })
+        title: 'Erro',
+        description: 'Não foi possível carregar a lista de dentistas.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Load dentists on mount
   useEffect(() => {
     if (currentDentist?.is_admin) {
-      fetchDentists()
+      fetchDentists();
     }
-  }, [currentDentist?.is_admin])
+  }, [currentDentist?.is_admin]);
 
   // Reset form when editing dentist changes
   useEffect(() => {
@@ -107,28 +136,28 @@ export default function DentistManagement() {
       form.reset({
         name: editingDentist.name,
         email: editingDentist.email,
-        password: "",
-        specialty: editingDentist.specialty || "",
-        registration_number: editingDentist.registration_number || "",
+        password: '',
+        specialty: editingDentist.specialty || '',
+        registration_number: editingDentist.registration_number || '',
         is_admin: editingDentist.is_admin,
-      })
+      });
     } else {
       form.reset({
-        name: "",
-        email: "",
-        password: "",
-        specialty: "",
-        registration_number: "",
+        name: '',
+        email: '',
+        password: '',
+        specialty: '',
+        registration_number: '',
         is_admin: false,
-      })
+      });
     }
-  }, [editingDentist, form])
+  }, [editingDentist, form]);
 
   // Handle form submission
   const onSubmit = async (data: z.infer<typeof dentistSchema>) => {
     try {
-      setIsSaving(true)
-      setError(null)
+      setIsSaving(true);
+      setError(null);
 
       if (editingDentist) {
         // Update existing dentist
@@ -139,33 +168,33 @@ export default function DentistManagement() {
           specialty: data.specialty || null,
           registration_number: data.registration_number || null,
           is_admin: data.is_admin,
-        }
+        };
 
         // Only add password if it's provided
-        if (data.password && data.password.trim() !== "") {
-          Object.assign(updateData, { password: data.password })
+        if (data.password && data.password.trim() !== '') {
+          Object.assign(updateData, { password: data.password });
         }
 
-        await updateDentist(updateData)
+        await updateDentist(updateData);
 
         toast({
-          title: "Dentista atualizado",
-          description: "Os dados do dentista foram atualizados com sucesso.",
-        })
+          title: 'Dentista atualizado',
+          description: 'Os dados do dentista foram atualizados com sucesso.',
+        });
       } else {
         // Create new dentist
         if (!data.password) {
-          throw new Error("Senha é obrigatória para novos dentistas")
+          throw new Error('Senha é obrigatória para novos dentistas');
         }
 
-        console.log("Submitting new dentist:", {
+        console.log('Submitting new dentist:', {
           name: data.name,
           email: data.email,
           // password is omitted for security
           specialty: data.specialty || null,
           registration_number: data.registration_number || null,
           is_admin: data.is_admin,
-        })
+        });
 
         await registerDentist({
           name: data.name,
@@ -174,57 +203,62 @@ export default function DentistManagement() {
           specialty: data.specialty || null,
           registration_number: data.registration_number || null,
           is_admin: data.is_admin,
-        })
+        });
 
         toast({
-          title: "Dentista cadastrado",
-          description: "O novo dentista foi cadastrado com sucesso.",
-        })
+          title: 'Dentista cadastrado',
+          description: 'O novo dentista foi cadastrado com sucesso.',
+        });
       }
 
       // Reset form and refresh list
-      setEditingDentist(null)
-      fetchDentists()
+      setEditingDentist(null);
+      fetchDentists();
     } catch (error) {
-      console.error("Error saving dentist:", error)
-      const errorMessage = error instanceof Error ? error.message : "Erro ao salvar dentista. Tente novamente."
-      setError(errorMessage)
+      console.error('Error saving dentist:', error);
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : 'Erro ao salvar dentista. Tente novamente.';
+      setError(errorMessage);
       toast({
-        title: "Erro",
+        title: 'Erro',
         description: errorMessage,
-        variant: "destructive",
-      })
+        variant: 'destructive',
+      });
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   // Handle delete dentist
   const handleDelete = async (dentistId: string) => {
-    if (confirm("Tem certeza que deseja excluir este dentista?")) {
+    if (confirm('Tem certeza que deseja excluir este dentista?')) {
       try {
-        setError(null)
-        await deleteDentist(dentistId)
+        setError(null);
+        await deleteDentist(dentistId);
 
         toast({
-          title: "Dentista excluído",
-          description: "O dentista foi excluído com sucesso.",
-        })
+          title: 'Dentista excluído',
+          description: 'O dentista foi excluído com sucesso.',
+        });
 
-        fetchDentists()
+        fetchDentists();
       } catch (error) {
-        console.error("Error deleting dentist:", error)
+        console.error('Error deleting dentist:', error);
         const errorMessage =
-          error instanceof Error ? error.message : "Não foi possível excluir o dentista. Tente novamente."
-        setError(errorMessage)
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível excluir o dentista. Tente novamente.';
+        setError(errorMessage);
         toast({
-          title: "Erro",
+          title: 'Erro',
           description: errorMessage,
-          variant: "destructive",
-        })
+          variant: 'destructive',
+        });
       }
     }
-  }
+  };
 
   // Check if user is admin
   if (!currentDentist?.is_admin) {
@@ -233,16 +267,20 @@ export default function DentistManagement() {
         <CardContent className="p-6">
           <div className="text-center">
             <h2 className="text-xl font-semibold">Acesso Restrito</h2>
-            <p className="mt-2 text-gray-600">Você não tem permissão para acessar esta página.</p>
+            <p className="mt-2 text-gray-600">
+              Você não tem permissão para acessar esta página.
+            </p>
           </div>
         </CardContent>
       </Card>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-blue-800 md:text-3xl">Gerenciar Dentistas</h1>
+      <h1 className="text-2xl font-bold text-blue-800 md:text-3xl">
+        Gerenciar Dentistas
+      </h1>
 
       {error && (
         <Alert variant="destructive">
@@ -253,9 +291,13 @@ export default function DentistManagement() {
 
       <Card>
         <CardHeader>
-          <CardTitle>{editingDentist ? "Editar Dentista" : "Novo Dentista"}</CardTitle>
+          <CardTitle>
+            {editingDentist ? 'Editar Dentista' : 'Novo Dentista'}
+          </CardTitle>
           <CardDescription>
-            {editingDentist ? "Atualize os dados do dentista" : "Cadastre um novo dentista no sistema"}
+            {editingDentist
+              ? 'Atualize os dados do dentista'
+              : 'Cadastre um novo dentista no sistema'}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -282,7 +324,12 @@ export default function DentistManagement() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="email@exemplo.com" {...field} disabled={!!editingDentist} />
+                      <Input
+                        type="email"
+                        placeholder="email@exemplo.com"
+                        {...field}
+                        disabled={!!editingDentist}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -294,11 +341,17 @@ export default function DentistManagement() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{editingDentist ? "Nova Senha (opcional)" : "Senha"}</FormLabel>
+                    <FormLabel>
+                      {editingDentist ? 'Nova Senha (opcional)' : 'Senha'}
+                    </FormLabel>
                     <FormControl>
                       <Input
                         type="password"
-                        placeholder={editingDentist ? "Deixe em branco para manter a senha atual" : "Senha"}
+                        placeholder={
+                          editingDentist
+                            ? 'Deixe em branco para manter a senha atual'
+                            : 'Senha'
+                        }
                         {...field}
                       />
                     </FormControl>
@@ -343,12 +396,16 @@ export default function DentistManagement() {
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
                     <FormControl>
-                      <Checkbox checked={field.value} onCheckedChange={field.onChange} />
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel>Administrador</FormLabel>
                       <p className="text-sm text-gray-500">
-                        Administradores podem gerenciar outros dentistas e configurações do sistema.
+                        Administradores podem gerenciar outros dentistas e
+                        configurações do sistema.
                       </p>
                     </div>
                   </FormItem>
@@ -357,10 +414,18 @@ export default function DentistManagement() {
 
               <div className="flex gap-2">
                 <Button type="submit" disabled={isSaving}>
-                  {isSaving ? "Salvando..." : editingDentist ? "Atualizar" : "Cadastrar"}
+                  {isSaving
+                    ? 'Salvando...'
+                    : editingDentist
+                    ? 'Atualizar'
+                    : 'Cadastrar'}
                 </Button>
                 {editingDentist && (
-                  <Button type="button" variant="outline" onClick={() => setEditingDentist(null)}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setEditingDentist(null)}
+                  >
                     Cancelar
                   </Button>
                 )}
@@ -386,8 +451,11 @@ export default function DentistManagement() {
             </div>
           ) : (
             <div className="space-y-4">
-              {dentists.map((dentist) => (
-                <div key={dentist.id} className="flex items-center justify-between rounded-lg border p-4">
+              {dentists.map(dentist => (
+                <div
+                  key={dentist.id}
+                  className="flex items-center justify-between rounded-lg border p-4"
+                >
                   <div>
                     <h3 className="font-medium">{dentist.name}</h3>
                     <p className="text-sm text-gray-500">{dentist.email}</p>
@@ -405,7 +473,12 @@ export default function DentistManagement() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => setEditingDentist(dentist)} title="Editar">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setEditingDentist(dentist)}
+                      title="Editar"
+                    >
                       <Pencil className="h-4 w-4" />
                     </Button>
                     <Button
@@ -413,7 +486,9 @@ export default function DentistManagement() {
                       size="icon"
                       onClick={() => handleDelete(dentist.id)}
                       title="Excluir"
-                      disabled={currentDentist && dentist.id === currentDentist.id}
+                      disabled={
+                        currentDentist && dentist.id === currentDentist.id
+                      }
                     >
                       <Trash2 className="h-4 w-4 text-red-600" />
                     </Button>
@@ -425,5 +500,5 @@ export default function DentistManagement() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

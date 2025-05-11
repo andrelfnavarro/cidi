@@ -1,40 +1,41 @@
-import type React from "react"
-import { Toaster } from "@/components/ui/toaster"
-import { AuthProvider } from "@/contexts/auth-context"
-import AdminHeader from "@/components/admin/header"
-import AdminNavBar from "@/components/admin/nav-bar"
-import { createClient } from '@/utils/supabase/server'
-import { redirect } from 'next/navigation'
+// app/admin/layout.tsx
+import React from 'react';
+import { redirect } from 'next/navigation';
+import { createClient } from '@/utils/supabase/server';
+
+import AdminHeader from '@/components/admin/header';
+import AdminNavBar from '@/components/admin/nav-bar';
+import { Toaster } from '@/components/ui/toaster';
+import { DentistProvider, type Dentist } from '@/contexts/dentist-context';
 
 export default async function AdminLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
-  // Create the Supabase client
-  const supabase = await createClient()
-  
-  // Get the session
-  const { data: { session } } = await supabase.auth.getSession()
-  
-  // The root /admin path is the login page, so we don't redirect or check for a dentist profile
-  // We only need to pass the children (LoginForm) with the auth provider
-  
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect('/admin');
+
+  const { data: dentist, error } = await supabase
+    .from('dentists')
+    .select('id, name, email, specialty, registration_number, is_admin')
+    .eq('id', user.id)
+    .single();
+
+  if (error || !dentist) {
+    await supabase.auth.signOut();
+    redirect('/admin');
+  }
+
   return (
-    <AuthProvider>
-      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
-        {/* Always show the header */}
-        <AdminHeader />
-        
-        {/* Only show the navbar when logged in */}
-        {session && <AdminNavBar />}
-        
-        <div className="container mx-auto px-4 py-8">{children}</div>
-        <footer className="mt-16 text-center text-sm text-gray-500">
-          <p>© {new Date().getFullYear()} C.I.D.I - Centro Integrado de Implantes. Todos os direitos reservados.</p>
-        </footer>
-      </div>
+    <DentistProvider dentist={dentist as Dentist}>
+      <AdminHeader />
+      <AdminNavBar />
+      <main className="container mx-auto px-4 py-8">{children}</main>
       <Toaster />
-    </AuthProvider>
-  )
+    </DentistProvider>
+  );
 }

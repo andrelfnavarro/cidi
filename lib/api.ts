@@ -9,12 +9,14 @@ export async function checkCPF(cpf: string): Promise<boolean> {
       body: JSON.stringify({ cpf }),
     });
 
-    if (!response.ok) {
-      throw new Error('Erro ao verificar CPF');
-    }
+    const responseData = await response.json();
+    console.log(responseData);
 
-    const data = await response.json();
-    return data.exists;
+    // if (!responseData.ok) {
+    //   throw new Error('Erro ao verificar CPF');
+    // }
+
+    return responseData.exists;
   } catch (error) {
     console.error('Erro ao verificar CPF:', error);
     throw error;
@@ -227,17 +229,15 @@ export async function savePayment(
 }
 
 // Função para finalizar tratamento
-export async function finalizeTreatment(treatmentId: string, dentistId: string): Promise<any> {
+export async function finalizeTreatment(treatmentId: string): Promise<any> {
   try {
     const response = await fetch('/api/admin/treatments/finalize', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ 
+      body: JSON.stringify({
         treatmentId,
-        dentistId,
-        finalized_at: new Date().toISOString() 
       }),
     });
 

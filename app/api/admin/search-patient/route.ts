@@ -1,56 +1,45 @@
-import { NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server"
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   try {
-    const url = new URL(request.url)
-    const searchTerm = url.searchParams.get("query")
+    const { cpf } = await request.json();
 
-    if (!searchTerm || searchTerm.trim().length === 0) {
-      return NextResponse.json({ patients: [] })
+    if (!cpf) {
+      return NextResponse.json({ error: 'CPF é obrigatório' }, { status: 400 });
     }
 
-    // Create the Supabase client using the new SSR integration
-    const supabase = await createClient()
+    // Normalize CPF by removing all non-digit characters
+    const normalizedCpf = cpf.replace(/\D/g, '');
 
-    // We'll search across multiple fields
-    const normalizedSearch = searchTerm.toLowerCase().trim()
+    const supabase = await createClient();
 
-    // First try to find by exact match on CPF or if is a numeric search
-    const isCPFSearch = normalizedSearch.replace(/\D/g, "").length > 0
-
-    if (isCPFSearch) {
-      const { data, error } = await supabase
-        .from("patients")
-        .select("*")
-        .filter("cpf", "ilike", `%${normalizedSearch.replace(/\D/g, "")}%`)
-        .limit(10)
-
-      if (error) {
-        console.error("Error searching patients by CPF:", error)
-        return NextResponse.json({ error: "Error searching patients" }, { status: 500 })
-      }
-
-      if (data.length > 0) {
-        return NextResponse.json({ patients: data })
-      }
-    }
-
-    // If not found by CPF, or not a CPF search, search by name
+    // Buscar paciente pelo CPF
     const { data, error } = await supabase
-      .from("patients")
-      .select("*")
-      .ilike("name", `%${normalizedSearch}%`)
-      .limit(10)
+      .from('patients')
+      .select('id')
+      .eq('cpf', normalizedCpf)
+      .single();
 
     if (error) {
-      console.error("Error searching patients:", error)
-      return NextResponse.json({ error: "Error searching patients" }, { status: 500 })
+      if (error.code === 'PGRST116') {
+        // Código para "não encontrado" no Supabase
+        return NextResponse.json({ patient: null });
+      }
+
+      console.error('Erro ao buscar paciente:', error);
+      return NextResponse.json(
+        { error: 'Erro ao buscar paciente' },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ patients: data })
+    return NextResponse.json({ patient: data });
   } catch (error) {
-    console.error("Error processing request:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error('Erro ao processar requisição:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
   }
 }

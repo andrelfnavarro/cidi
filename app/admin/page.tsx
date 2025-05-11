@@ -1,30 +1,18 @@
-"use client"
+import { createClient } from '@/utils/supabase/server';
+import { redirect } from 'next/navigation';
+import LoginForm from '@/components/admin/login-form';
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
-import LoginForm from "@/components/admin/login-form"
-import { useAuth } from "@/contexts/auth-context"
+export default async function AdminPage() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-export default function AdminPage() {
-  const { user, dentist, isLoading } = useAuth()
-  const router = useRouter()
+  if (user) redirect('/admin/pacientes');
 
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (!isLoading && user && dentist) {
-      router.push("/admin/pacientes")
-    }
-  }, [user, dentist, isLoading, router])
-
-  // Show login form if not authenticated or still loading
   return (
     <div className="mx-auto max-w-md">
-      {!isLoading && !user && <LoginForm />}
-      {isLoading && (
-        <div className="flex h-[300px] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-blue-800"></div>
-        </div>
-      )}
+      <LoginForm />
     </div>
-  )
+  );
 }

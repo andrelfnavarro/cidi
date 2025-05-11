@@ -1,72 +1,70 @@
-import { NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server"
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from 'next/server';
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   try {
-    const url = new URL(request.url)
-    const searchTerm = url.searchParams.get("query")
+    const { searchTerm } = await request.json();
 
-    if (!searchTerm || searchTerm.trim().length < 3) {
-      return NextResponse.json({ patients: [] })
+    if (!searchTerm || searchTerm.trim() === '') {
+      return NextResponse.json({ patients: [] });
     }
 
-    // Create the Supabase client using the new SSR integration
-    const supabase = await createClient()
+    const supabase = await createClient();
 
-    // We'll search across multiple fields
-    const normalizedSearch = searchTerm.toLowerCase().trim()
+    // Normalize the search term by removing all non-alphanumeric characters
+    const normalizedSearchTerm = searchTerm.replace(/\D/g, '');
 
-    // First try to find by exact match on CPF
-    const { data: cpfMatches, error: cpfError } = await supabase
-      .from("patients")
-      .select("*")
-      .ilike("cpf", `%${normalizedSearch}%`)
+    // Create a query to search by name, email, CPF, or phone
+    const { data, error } = await supabase
+      .from('patients')
+      .select('*')
+      .or(
+        `name.ilike.%${searchTerm}%,` +
+          `email.ilike.%${searchTerm}%,` +
+          `cpf.ilike.%${normalizedSearchTerm}%,` +
+          `phone.ilike.%${normalizedSearchTerm}%`
+      )
+      .order('name')
+      .limit(20);
 
-    if (cpfError) {
-      console.error("Error searching patients by CPF:", cpfError)
-      return NextResponse.json({ error: "Error searching patients" }, { status: 500 })
+    if (error) {
+      console.error('Erro ao buscar pacientes:', error);
+      return NextResponse.json(
+        { error: 'Erro ao buscar pacientes' },
+        { status: 500 }
+      );
     }
 
-    // Then search by name
-    const { data: nameMatches, error: nameError } = await supabase
-      .from("patients")
-      .select("*")
-      .ilike("name", `%${normalizedSearch}%`)
+    // For CPF and phone, we need to do additional filtering since Supabase
+    // doesn't support removing formatting in the query
+    let filteredData = data;
 
-    if (nameError) {
-      console.error("Error searching patients by name:", nameError)
-      return NextResponse.json({ error: "Error searching patients" }, { status: 500 })
+    if (normalizedSearchTerm.length > 0) {
+      // Additional filtering for CPF and phone
+      filteredData = data.filter(patient => {
+        // Normalize stored CPF and phone by removing non-digits
+        const normalizedCpf = patient.cpf ? patient.cpf.replace(/\D/g, '') : '';
+        const normalizedPhone = patient.phone
+          ? patient.phone.replace(/\D/g, '')
+          : '';
+
+        // Check if normalized values contain the normalized search term
+        return (
+          normalizedCpf.includes(normalizedSearchTerm) ||
+          normalizedPhone.includes(normalizedSearchTerm) ||
+          patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (patient.email &&
+            patient.email.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+      });
     }
 
-    // Then search by email
-    const { data: emailMatches, error: emailError } = await supabase
-      .from("patients")
-      .select("*")
-      .ilike("email", `%${normalizedSearch}%`)
-
-    if (emailError) {
-      console.error("Error searching patients by email:", emailError)
-      return NextResponse.json({ error: "Error searching patients" }, { status: 500 })
-    }
-
-    // Then search by phone
-    const { data: phoneMatches, error: phoneError } = await supabase
-      .from("patients")
-      .select("*")
-      .ilike("phone", `%${normalizedSearch}%`)
-
-    if (phoneError) {
-      console.error("Error searching patients by phone:", phoneError)
-      return NextResponse.json({ error: "Error searching patients" }, { status: 500 })
-    }
-
-    // Combine results and remove duplicates
-    const allMatches = [...cpfMatches, ...nameMatches, ...emailMatches, ...phoneMatches]
-    const uniquePatients = Array.from(new Map(allMatches.map(item => [item.id, item])).values())
-
-    return NextResponse.json({ patients: uniquePatients })
+    return NextResponse.json({ patients: filteredData });
   } catch (error) {
-    console.error("Error processing request:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error('Erro ao processar requisição:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
   }
 }

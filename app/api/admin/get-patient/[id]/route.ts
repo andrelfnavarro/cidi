@@ -1,30 +1,24 @@
-import { NextResponse } from 'next/server';
 import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from 'next/server';
 
-interface ContextParams {
-  params: {
-    id: string;
-  };
-}
-
-export async function GET(request: Request, context: ContextParams) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
-    const { id } = context.params;
+    const id = await params.id;
 
     if (!id) {
-      return NextResponse.json({ error: 'ID do paciente não fornecido' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'ID do paciente é obrigatório' },
+        { status: 400 }
+      );
     }
 
-    // Get the URL parameters
-    const url = new URL(request.url);
-    const includeAnamnesis = url.searchParams.get('includeAnamnesis') === 'true';
-    const includeTreatments = url.searchParams.get('includeTreatments') === 'true';
-
-    // Create the Supabase client using the new SSR integration
     const supabase = await createClient();
 
-    // Get the patient information
-    const { data: patient, error } = await supabase
+    // Buscar paciente pelo ID
+    const { data, error } = await supabase
       .from('patients')
       .select('*')
       .eq('id', id)
@@ -32,47 +26,19 @@ export async function GET(request: Request, context: ContextParams) {
 
     if (error) {
       console.error('Erro ao buscar paciente:', error);
-      return NextResponse.json({ error: 'Paciente não encontrado' }, { status: 404 });
-    }
-
-    // If we need to include treatments
-    let treatments = null;
-    if (includeTreatments) {
-      const { data: treatmentData, error: treatmentError } = await supabase
-        .from('treatments')
-        .select(`
-          *,
-          dentist:dentist_id(name)
-        `)
-        .eq('patient_id', id)
-        .order('created_at', { ascending: false });
-
-      if (treatmentError) {
-        console.error('Erro ao buscar tratamentos:', treatmentError);
-      } else {
-        treatments = treatmentData;
-      }
-    }
-
-    // If we need to include anamnesis
-    let anamnesis = null;
-    if (includeAnamnesis && treatments && treatments.length > 0) {
-      // Get the latest treatment that has anamnesis data
-      const latestWithAnamnesis = treatments.find((t: any) => t.anamnesis && Object.keys(t.anamnesis).length > 0);
-      if (latestWithAnamnesis) {
-        anamnesis = latestWithAnamnesis.anamnesis;
-      }
+      return NextResponse.json(
+        { error: 'Erro ao buscar paciente' },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({
-      patient,
-      treatments: includeTreatments ? treatments : undefined,
-      anamnesis: includeAnamnesis ? anamnesis : undefined,
+      patient: data,
     });
   } catch (error) {
-    console.error('Error processing request:', error);
+    console.error('Erro ao processar requisição:', error);
     return NextResponse.json(
-      { error: 'Internal server error: ' + (error instanceof Error ? error.message : String(error)) },
+      { error: 'Erro interno do servidor' },
       { status: 500 }
     );
   }

@@ -58,12 +58,7 @@ interface PaymentFormProps {
   initialData?: any;
   isReadOnly?: boolean;
   onSaved?: () => void;
-  trackingInfo?: {
-    createdAt?: string;
-    updatedAt?: string;
-    createdBy?: { id: string; name: string };
-    updatedBy?: { id: string; name: string };
-  };
+  treatmentItems: any[];
 }
 
 export default function PaymentForm({
@@ -71,12 +66,16 @@ export default function PaymentForm({
   initialData,
   isReadOnly = false,
   onSaved,
-  trackingInfo,
+  treatmentItems,
 }: PaymentFormProps) {
   const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [treatmentItems, setTreatmentItems] = useState<any[]>([]);
-  const [totalValue, setTotalValue] = useState(0);
+  const totalValue = treatmentItems
+    .filter((item: any) => !item.insurance_coverage)
+    .reduce(
+      (sum: number, item: any) =>
+        sum + Number.parseFloat(item.procedure_value || 0),
+      0
+    );
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof paymentSchema>>({
@@ -88,48 +87,9 @@ export default function PaymentForm({
     },
   });
 
-  // Buscar dados atualizados do tratamento para garantir que temos os itens mais recentes
-  useEffect(() => {
-    const fetchTreatmentData = async () => {
-      try {
-        setIsLoading(true);
-        const result = await getTreatmentById(treatmentId);
-
-        if (result.treatment && result.treatment.treatment_items) {
-          setTreatmentItems(result.treatment.treatment_items);
-
-          // Calcular o valor total dos itens particulares
-          const total = result.treatment.treatment_items
-            .filter((item: any) => !item.insurance_coverage)
-            .reduce(
-              (sum: number, item: any) =>
-                sum + Number.parseFloat(item.procedure_value || 0),
-              0
-            );
-
-          setTotalValue(total);
-        }
-      } catch (error) {
-        console.error('Erro ao buscar dados do tratamento:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchTreatmentData();
-  }, [treatmentId]);
-
   // Reset form when initialData changes
   useEffect(() => {
     if (initialData) {
-      console.log('Resetting form with:', {
-        paymentMethod: initialData.payment_method,
-        installments: initialData.installments?.toString(),
-        paymentDate: initialData.payment_date
-          ? new Date(initialData.payment_date)
-          : null,
-      });
-
       form.reset({
         paymentMethod: initialData.payment_method,
         installments: initialData.installments?.toString(),
@@ -138,19 +98,18 @@ export default function PaymentForm({
           : null,
       });
     }
-  }, [initialData, form]);
+  }, [initialData]);
 
   // Handle payment submission
   const onSubmit = async (data: z.infer<typeof paymentSchema>) => {
     try {
       setIsSaving(true);
-      console.log('Submitting payment data:', data);
 
       await savePayment(
         treatmentId,
         data.paymentMethod,
         Number.parseInt(data.installments),
-        data.paymentDate
+        data.paymentDate ?? null
       );
 
       toast({
@@ -186,14 +145,13 @@ export default function PaymentForm({
                 Informações de pagamento do tratamento
               </CardDescription>
             </div>
-            {trackingInfo && (
-              <TrackingInfo
-                createdAt={trackingInfo.createdAt}
-                updatedAt={trackingInfo.updatedAt}
-                createdBy={trackingInfo.createdBy}
-                updatedBy={trackingInfo.updatedBy}
-              />
-            )}
+
+            <TrackingInfo
+              updatedAt={initialData?.updated_at}
+              updatedBy={initialData?.updated_by_dentist}
+              createdAt={initialData?.created_at}
+              createdBy={initialData?.created_by_dentist}
+            />
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -282,22 +240,10 @@ export default function PaymentForm({
                 : 'Configure as informações de pagamento do tratamento'}
             </CardDescription>
           </div>
-          {trackingInfo && (
-            <TrackingInfo
-              createdAt={trackingInfo.createdAt}
-              updatedAt={trackingInfo.updatedAt}
-              createdBy={trackingInfo.createdBy}
-              updatedBy={trackingInfo.updatedBy}
-            />
-          )}
         </div>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-t-2 border-blue-800"></div>
-          </div>
-        ) : treatmentItems.length === 0 ? (
+        {treatmentItems.length === 0 ? (
           <Alert>
             <AlertDescription className="text-center py-4">
               Primeiro adicione procedimentos no planejamento para gerar um

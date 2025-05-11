@@ -1,110 +1,133 @@
-import { NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server"
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from 'next/server';
 
-export async function POST(request: Request) {
-  try {
-    const { treatmentId, items } = await request.json()
+export async function POST(req: Request) {
+  const { treatmentId, items } = await req.json();
+  if (!treatmentId || !Array.isArray(items)) {
+    return NextResponse.json({ error: 'Dados incompletos' }, { status: 400 });
+  }
 
-    if (!treatmentId || !items) {
-      return NextResponse.json({ error: "Dados incompletos" }, { status: 400 })
-    }
+  const supabase = await createClient();
+  const {
+    data: { user },
+    error: userErr,
+  } = await supabase.auth.getUser();
 
-    // Create the Supabase client using the new SSR integration
-    const supabase = await createClient()
+  if (userErr || !user) {
+    return NextResponse.json(
+      { error: 'Usuário não autenticado' },
+      { status: 401 }
+    );
+  }
+  const dentistId = user.id;
 
-    // Get authenticated user with getUser() for improved security
-    const { data: { user }, error: userError } = await supabase.auth.getUser()
-    
-    if (userError || !user) {
-      return NextResponse.json({ error: "Usuário não autenticado" }, { status: 401 })
-    }
+  // 1. Fetch existing items
+  const { data: existingItems, error: fetchErr } = await supabase
+    .from('treatment_items')
+    .select('*')
+    .eq('treatment_id', treatmentId);
+  if (fetchErr) throw fetchErr;
 
-    const dentistId = user.id
+  const existingIds = existingItems.map(i => i.id);
+  const incomingIds = items.filter(i => i.id).map(i => i.id);
 
-    // Primeiro, excluir itens existentes para este tratamento
-    const { error: deleteError } = await supabase.from("treatment_items").delete().eq("treatment_id", treatmentId)
+  // 2. Delete removed rows
+  const toDelete = existingIds.filter(id => !incomingIds.includes(id));
 
-    if (deleteError) {
-      console.error("Erro ao excluir itens existentes:", deleteError)
-      return NextResponse.json({ error: "Erro ao atualizar planejamento" }, { status: 500 })
-    }
+  if (toDelete.length) {
+    const { error: deleteErr } = await supabase
+      .from('treatment_items')
+      .delete()
+      .in('id', toDelete);
+    if (deleteErr) throw deleteErr;
+  }
 
-    // Se não há itens para inserir, retornar sucesso
-    if (items.length === 0) {
-      return NextResponse.json({ success: true, items: [] })
-    }
+  // 3. Update existing rows
+  const toUpdate = existingItems.filter(i => incomingIds.includes(i.id));
 
-    // Inserir novos itens
-    const itemsToInsert = items.map((item: any) => ({
+  for (const item of toUpdate) {
+    const { error: updErr } = await supabase
+      .from('treatment_items')
+      .update({
+        tooth_number: item.toothNumber,
+        procedure_description: item.procedureDescription,
+        procedure_value: item.procedureValue,
+        insurance_coverage: item.insuranceCoverage,
+        conclusion_date: item.conclusionDate
+          ? new Date(item.conclusionDate).toISOString()
+          : null,
+        updated_by: dentistId,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', item.id);
+    if (updErr) throw updErr;
+  }
+
+  // 4. Insert new rows
+  const toInsert = items
+    .filter(i => !i.id)
+    .map(i => ({
       treatment_id: treatmentId,
-      tooth_number: item.toothNumber,
-      procedure_description: item.procedureDescription,
-      procedure_value: item.procedureValue,
-      insurance_coverage: item.insuranceCoverage,
-      conclusion_date: item.conclusionDate ? new Date(item.conclusionDate).toISOString() : null,
+      tooth_number: i.toothNumber,
+      procedure_description: i.procedureDescription,
+      procedure_value: i.procedureValue,
+      insurance_coverage: i.insuranceCoverage,
+      conclusion_date: i.conclusionDate
+        ? new Date(i.conclusionDate).toISOString()
+        : null,
+      created_by: dentistId,
+      created_at: new Date().toISOString(),
+      updated_by: dentistId,
+      updated_at: new Date().toISOString(),
+    }));
+
+  if (toInsert.length) {
+    const { error: insertErr } = await supabase
+      .from('treatment_items')
+      .insert(toInsert);
+    if (insertErr) throw insertErr;
+  }
+
+  // Calcular valor total dos itens particulares (não cobertos pelo convênio)
+  const totalValue = items
+    .filter((item: any) => !item.insuranceCoverage)
+    .reduce(
+      (sum: number, item: any) =>
+        sum + Number.parseFloat(item.procedureValue || 0),
+      0
+    );
+
+  // Verificar se já existe um registro de pagamento
+  const { data: existingPayment, error: paymentCheckError } = await supabase
+    .from('treatment_payment')
+    .select('id')
+    .eq('treatment_id', treatmentId)
+    .maybeSingle();
+
+  if (paymentCheckError && paymentCheckError.code !== 'PGRST116') {
+    console.error('Erro ao verificar pagamento existente:', paymentCheckError);
+  }
+
+  if (existingPayment) {
+    // TODO: check if we need to reset the payment method, date and installments
+    await supabase
+      .from('treatment_payment')
+      .update({
+        total_value: totalValue,
+        updated_by: dentistId,
+      })
+      .eq('id', existingPayment.id);
+  } else {
+    await supabase.from('treatment_payment').insert({
+      treatment_id: treatmentId,
+      total_value: totalValue,
+      payment_method: 'credit_card',
+      installments: 1,
+      payment_date: null,
       created_by: dentistId,
       updated_by: dentistId,
-    }))
-
-    const { data, error } = await supabase.from("treatment_items").insert(itemsToInsert).select()
-
-    if (error) {
-      console.error("Erro ao inserir itens do planejamento:", error)
-      return NextResponse.json({ error: "Erro ao salvar planejamento" }, { status: 500 })
-    }
-
-    // Calcular valor total dos itens particulares (não cobertos pelo convênio)
-    const totalValue = items
-      .filter((item: any) => !item.insuranceCoverage)
-      .reduce((sum: number, item: any) => sum + Number.parseFloat(item.procedureValue || 0), 0)
-
-    // Verificar se já existe um registro de pagamento
-    const { data: existingPayment, error: paymentCheckError } = await supabase
-      .from("treatment_payment")
-      .select("id")
-      .eq("treatment_id", treatmentId)
-      .maybeSingle()
-
-    if (paymentCheckError && paymentCheckError.code !== "PGRST116") {
-      console.error("Erro ao verificar pagamento existente:", paymentCheckError)
-    }
-
-    // Atualizar ou criar registro de pagamento
-    if (existingPayment) {
-      await supabase
-        .from("treatment_payment")
-        .update({
-          total_value: totalValue,
-          updated_at: new Date().toISOString(),
-          updated_by: dentistId,
-        })
-        .eq("id", existingPayment.id)
-    } else {
-      await supabase.from("treatment_payment").insert({
-        treatment_id: treatmentId,
-        total_value: totalValue,
-        payment_method: "credit_card",
-        installments: 1,
-        payment_date: null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-        created_by: dentistId,
-        updated_by: dentistId,
-      })
-    }
-
-    // Update the treatment's updated_by field
-    await supabase
-      .from("treatments")
-      .update({
-        updated_at: new Date().toISOString(),
-        updated_by: dentistId,
-      })
-      .eq("id", treatmentId)
-
-    return NextResponse.json({ success: true, items: data })
-  } catch (error) {
-    console.error("Erro ao processar requisição:", error)
-    return NextResponse.json({ error: "Erro interno do servidor" }, { status: 500 })
+    });
   }
+
+  return NextResponse.json({ success: true });
 }

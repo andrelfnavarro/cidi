@@ -1,18 +1,21 @@
-import { Suspense } from "react"
-import TreatmentDetails from "@/components/admin/treatment-details"
-import AuthCheck from "@/components/admin/auth-check"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Suspense } from 'react';
+import TreatmentDetails from '@/components/admin/treatment-details';
+import { Skeleton } from '@/components/ui/skeleton';
 
-export default function TreatmentPage({ params }: { params: { id: string } }) {
+export default async function TreatmentPage({
+  params,
+}: {
+  params: { id: string };
+}) {
+  const { id } = await params;
+
   return (
-    <AuthCheck>
-      <div className="mx-auto max-w-4xl">
-        <Suspense fallback={<TreatmentDetailsSkeleton />}>
-          <TreatmentDetails treatmentId={params.id} />
-        </Suspense>
-      </div>
-    </AuthCheck>
-  )
+    <div className="mx-auto max-w-4xl">
+      <Suspense fallback={<TreatmentDetailsSkeleton />}>
+        <TreatmentDetails treatmentId={id} />
+      </Suspense>
+    </div>
+  );
 }
 
 function TreatmentDetailsSkeleton() {
@@ -28,5 +31,5 @@ function TreatmentDetailsSkeleton() {
         <Skeleton className="h-64 w-full" />
       </div>
     </div>
-  )
+  );
 }

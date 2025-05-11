@@ -1,12 +1,9 @@
-import DentistManagement from "@/components/admin/dentist-management"
-import AuthCheck from "@/components/admin/auth-check"
+import DentistManagement from '@/components/admin/dentist-management';
 
 export default function DentistsPage() {
   return (
-    <AuthCheck>
-      <div className="mx-auto max-w-4xl">
-        <DentistManagement />
-      </div>
-    </AuthCheck>
-  )
+    <div className="mx-auto max-w-4xl">
+      <DentistManagement />
+    </div>
+  );
 }

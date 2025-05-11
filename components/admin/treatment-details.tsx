@@ -10,12 +10,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/auth-context';
 import { getTreatmentById, finalizeTreatment } from '@/lib/api';
 import AnamnesisForm from '@/components/admin/anamnesis-form';
 import PlanningForm from '@/components/admin/planning-form';
 import PaymentForm from '@/components/admin/payment-form';
 import TrackingInfo from '@/components/admin/tracking-info';
+import { useDentist } from '@/contexts/dentist-context';
 
 export default function TreatmentDetails({
   treatmentId,
@@ -23,54 +23,19 @@ export default function TreatmentDetails({
   treatmentId: string;
 }) {
   const [treatment, setTreatment] = useState<any>(null);
-  const [paymentData, setPaymentData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isFinalizing, setIsFinalizing] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const { dentist } = useAuth();
+  const dentist = useDentist();
 
-  // Fetch treatment data
   const fetchTreatment = async () => {
     try {
       setIsLoading(true);
       const data = await getTreatmentById(treatmentId);
+
       setTreatment(data.treatment);
-
-      // Extract payment data
-      if (data.treatment?.treatment_payment) {
-        console.log('Raw treatment_payment:', data.treatment.treatment_payment);
-
-        // Check if it's an array with data
-        if (
-          Array.isArray(data.treatment.treatment_payment) &&
-          data.treatment.treatment_payment.length > 0
-        ) {
-          console.log(
-            'Payment data found in array:',
-            data.treatment.treatment_payment[0]
-          );
-          setPaymentData(data.treatment.treatment_payment[0]);
-        }
-        // Check if it's a direct object
-        else if (
-          typeof data.treatment.treatment_payment === 'object' &&
-          data.treatment.treatment_payment !== null
-        ) {
-          console.log(
-            'Payment data found as object:',
-            data.treatment.treatment_payment
-          );
-          setPaymentData(data.treatment.treatment_payment);
-        } else {
-          console.log('No valid payment data found');
-          setPaymentData(null);
-        }
-      } else {
-        console.log('No payment data property found');
-        setPaymentData(null);
-      }
     } catch (error) {
       toast({
         title: 'Erro',
@@ -92,7 +57,8 @@ export default function TreatmentDetails({
     if (!dentist) {
       toast({
         title: 'Erro',
-        description: 'Dados do dentista não encontrados. Por favor, faça login novamente.',
+        description:
+          'Dados do dentista não encontrados. Por favor, faça login novamente.',
         variant: 'destructive',
       });
       return;
@@ -100,7 +66,7 @@ export default function TreatmentDetails({
 
     try {
       setIsFinalizing(true);
-      await finalizeTreatment(treatmentId, dentist.id);
+      await finalizeTreatment(treatmentId);
       toast({
         title: 'Tratamento finalizado',
         description: 'O tratamento foi finalizado com sucesso.',
@@ -210,7 +176,6 @@ export default function TreatmentDetails({
           </div>
         )}
 
-        {/* Treatment tracking info */}
         <TrackingInfo
           createdAt={treatment.created_at}
           updatedAt={treatment.updated_at}
@@ -252,33 +217,16 @@ export default function TreatmentDetails({
             initialItems={treatment.treatment_items}
             isReadOnly={isTreatmentFinalized && !editMode}
             onSaved={fetchTreatment}
-            trackingInfo={
-              treatment.treatment_items?.length > 0
-                ? {
-                    updatedAt: treatment.treatment_items[0].updated_at,
-                    updatedBy: treatment.treatment_items[0].updated_by_dentist,
-                  }
-                : undefined
-            }
           />
         </TabsContent>
 
         <TabsContent value="payment" className="mt-6">
           <PaymentForm
             treatmentId={treatmentId}
-            initialData={paymentData}
+            initialData={treatment.treatment_payment}
+            treatmentItems={treatment.treatment_items}
             isReadOnly={isTreatmentFinalized && !editMode}
             onSaved={fetchTreatment}
-            trackingInfo={
-              paymentData
-                ? {
-                    createdAt: paymentData.created_at,
-                    updatedAt: paymentData.updated_at,
-                    createdBy: paymentData.created_by_dentist,
-                    updatedBy: paymentData.updated_by_dentist,
-                  }
-                : undefined
-            }
           />
         </TabsContent>
       </Tabs>

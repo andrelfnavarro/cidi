@@ -1,50 +1,45 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LogOut, User } from 'lucide-react';
+import { LogOut, User as UserIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/auth-context';
 import {
   DropdownMenu,
+  DropdownMenuTrigger,
   DropdownMenuContent,
-  DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuTrigger,
+  DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
+import { supabaseClient } from '@/utils/supabase/client';
+import { useDentist } from '@/contexts/dentist-context';
 
 export default function AdminHeader() {
-  const { dentist, signOut } = useAuth();
   const router = useRouter();
+  const dentist = useDentist();
 
   const handleSignOut = async () => {
-    try {
-      await signOut();
-      // The redirect is now handled in the auth context
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
+    await supabaseClient.auth.signOut();
+    router.push('/admin');
   };
 
   return (
     <header className="border-b bg-white">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <div>
-          <Link
-            href="/admin/pacientes"
-            className="text-xl font-bold text-blue-800"
-          >
-            C.I.D.I - Portal do Dentista
-          </Link>
-        </div>
-
+        <Link
+          href="/admin/pacientes"
+          className="text-xl font-bold text-blue-800"
+        >
+          C.I.D.I - Portal do Dentista
+        </Link>
         {dentist && (
           <div className="flex items-center gap-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
-                  <User size={16} />
+                  <UserIcon size={16} />
                   <span>{dentist.name}</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -67,7 +62,7 @@ export default function AdminHeader() {
                   className="text-red-600"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sair</span>
+                  Sair
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

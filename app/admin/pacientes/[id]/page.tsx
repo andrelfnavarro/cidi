@@ -1,18 +1,15 @@
-import { Suspense } from "react"
-import PatientDetails from "@/components/admin/patient-details"
-import AuthCheck from "@/components/admin/auth-check"
-import { Skeleton } from "@/components/ui/skeleton"
+import { Suspense } from 'react';
+import PatientDetails from '@/components/admin/patient-details';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function PatientPage({ params }: { params: { id: string } }) {
   return (
-    <AuthCheck>
-      <div className="mx-auto max-w-4xl">
-        <Suspense fallback={<PatientDetailsSkeleton />}>
-          <PatientDetails patientId={params.id} />
-        </Suspense>
-      </div>
-    </AuthCheck>
-  )
+    <div className="mx-auto max-w-4xl">
+      <Suspense fallback={<PatientDetailsSkeleton />}>
+        <PatientDetails patientId={params.id} />
+      </Suspense>
+    </div>
+  );
 }
 
 function PatientDetailsSkeleton() {
@@ -37,5 +34,5 @@ function PatientDetailsSkeleton() {
 
       <Skeleton className="h-64 w-full" />
     </div>
-  )
+  );
 }

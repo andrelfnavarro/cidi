@@ -1,214 +1,252 @@
-"use client"
+'use client';
 
-import type React from "react"
+import type React from 'react';
 
-import { useState } from "react"
-import { z } from "zod"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useToast } from "@/hooks/use-toast"
-import { checkCPF, registerPatient } from "@/lib/api"
+import { useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { checkCPF, registerPatient } from '@/lib/api';
 
 // CPF validation schema
 const cpfSchema = z.object({
   cpf: z
     .string()
-    .min(11, { message: "CPF deve ter 11 dígitos" })
-    .max(14, { message: "CPF deve ter no máximo 14 caracteres" })
+    .min(11, { message: 'CPF deve ter 11 dígitos' })
+    .max(14, { message: 'CPF deve ter no máximo 14 caracteres' })
     .refine(
-      (value) => {
+      value => {
         // Remove non-digits for validation
-        const digits = value.replace(/\D/g, "")
-        return digits.length === 11
+        const digits = value.replace(/\D/g, '');
+        return digits.length === 11;
       },
       {
-        message: "CPF inválido",
-      },
+        message: 'CPF inválido',
+      }
     ),
-})
+});
 
 // Full patient registration schema
 const patientSchema = z.object({
-  name: z.string().min(3, { message: "Nome deve ter pelo menos 3 caracteres" }),
-  email: z.string().email({ message: "Email inválido" }),
-  phone: z.string().min(10, { message: "Telefone inválido" }),
+  name: z.string().min(3, { message: 'Nome deve ter pelo menos 3 caracteres' }),
+  email: z.string().email({ message: 'Email inválido' }),
+  phone: z.string().min(10, { message: 'Telefone inválido' }),
   cpf: z.string(),
-  street: z.string().min(3, { message: "Endereço deve ter pelo menos 3 caracteres" }),
-  zipCode: z.string().min(8, { message: "CEP inválido" }),
-  city: z.string().min(2, { message: "Cidade deve ter pelo menos 2 caracteres" }),
-  state: z.string().min(2, { message: "Estado deve ter pelo menos 2 caracteres" }),
-  gender: z.enum(["masculino", "feminino", "outro"], {
-    required_error: "Por favor selecione um gênero",
+  street: z
+    .string()
+    .min(3, { message: 'Endereço deve ter pelo menos 3 caracteres' }),
+  zipCode: z.string().min(8, { message: 'CEP inválido' }),
+  city: z
+    .string()
+    .min(2, { message: 'Cidade deve ter pelo menos 2 caracteres' }),
+  state: z
+    .string()
+    .min(2, { message: 'Estado deve ter pelo menos 2 caracteres' }),
+  gender: z.enum(['male', 'female', 'other'], {
+    required_error: 'Por favor selecione um gênero',
   }),
   birthDay: z.string({
-    required_error: "Dia é obrigatório",
+    required_error: 'Dia é obrigatório',
   }),
   birthMonth: z.string({
-    required_error: "Mês é obrigatório",
+    required_error: 'Mês é obrigatório',
   }),
   birthYear: z.string({
-    required_error: "Ano é obrigatório",
+    required_error: 'Ano é obrigatório',
   }),
-  hasInsurance: z.enum(["true", "false"], {
-    required_error: "Por favor indique se possui convênio",
+  hasInsurance: z.enum(['true', 'false'], {
+    required_error: 'Por favor indique se possui convênio',
   }),
   insuranceName: z.string().optional(),
   insuranceNumber: z.string().optional(),
-})
+});
 
 export default function PatientForm() {
-  const [step, setStep] = useState<"cpf" | "exists" | "register" | "success">("cpf")
-  const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
+  const [step, setStep] = useState<'cpf' | 'exists' | 'register' | 'success'>(
+    'cpf'
+  );
+  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
 
   // CPF form
   const cpfForm = useForm<z.infer<typeof cpfSchema>>({
     resolver: zodResolver(cpfSchema),
     defaultValues: {
-      cpf: "",
+      cpf: '',
     },
-  })
+  });
 
   // Full registration form
   const patientForm = useForm<z.infer<typeof patientSchema>>({
     resolver: zodResolver(patientSchema),
     defaultValues: {
-      name: "",
-      email: "",
-      phone: "",
-      cpf: "",
-      street: "",
-      zipCode: "",
-      city: "",
-      state: "",
+      name: '',
+      email: '',
+      phone: '',
+      cpf: '',
+      street: '',
+      zipCode: '',
+      city: '',
+      state: '',
       gender: undefined,
-      birthDay: "",
-      birthMonth: "",
-      birthYear: "",
+      birthDay: '',
+      birthMonth: '',
+      birthYear: '',
       hasInsurance: undefined,
-      insuranceName: "",
-      insuranceNumber: "",
+      insuranceName: '',
+      insuranceNumber: '',
     },
-  })
+  });
 
   // Handle CPF submission
   const onCPFSubmit = async (data: z.infer<typeof cpfSchema>) => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
       // Normalize CPF by removing non-digits
-      const normalizedCPF = data.cpf.replace(/\D/g, "")
+      const normalizedCPF = data.cpf.replace(/\D/g, '');
 
       // Check if CPF exists in the system
-      const exists = await checkCPF(normalizedCPF)
+      const exists = await checkCPF(normalizedCPF);
 
       if (exists) {
-        setStep("exists")
+        setStep('exists');
       } else {
         // Set CPF in the full registration form
-        patientForm.setValue("cpf", normalizedCPF)
-        setStep("register")
+        patientForm.setValue('cpf', normalizedCPF);
+        setStep('register');
       }
     } catch (error) {
       toast({
-        title: "Erro",
-        description: "Ocorreu um erro ao verificar o CPF. Tente novamente.",
-        variant: "destructive",
-      })
+        title: 'Erro',
+        description: 'Ocorreu um erro ao verificar o CPF. Tente novamente.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Handle full registration submission
   const onPatientSubmit = async (data: z.infer<typeof patientSchema>) => {
     try {
-      setIsLoading(true)
+      setIsLoading(true);
 
       // Convert separate date fields to a single date string in ISO format
-      const birthDateString = `${data.birthYear}-${data.birthMonth.padStart(2, "0")}-${data.birthDay.padStart(2, "0")}`
+      const birthDateString = `${data.birthYear}-${data.birthMonth.padStart(
+        2,
+        '0'
+      )}-${data.birthDay.padStart(2, '0')}`;
 
       // Create a copy of the data with the birthDate field
       const patientData = {
         ...data,
         birthDate: birthDateString,
         // Normalize phone by removing non-digits
-        phone: data.phone.replace(/\D/g, ""),
-      }
+        phone: data.phone.replace(/\D/g, ''),
+      };
 
       // Remove the separate date fields before sending to the API
-      delete patientData.birthDay
-      delete patientData.birthMonth
-      delete patientData.birthYear
+      delete patientData.birthDay;
+      delete patientData.birthMonth;
+      delete patientData.birthYear;
 
       // Registrar paciente no banco de dados
-      await registerPatient(patientData)
+      await registerPatient(patientData);
 
       // Show success message
-      setStep("success")
+      setStep('success');
 
       toast({
-        title: "Cadastro realizado com sucesso!",
-        description: "Seus dados foram salvos. Aguarde o contato do dentista.",
-      })
+        title: 'Cadastro realizado com sucesso!',
+        description: 'Seus dados foram salvos. Aguarde o contato do dentista.',
+      });
     } catch (error) {
       toast({
-        title: "Erro",
-        description: error instanceof Error ? error.message : "Erro ao cadastrar paciente. Tente novamente.",
-        variant: "destructive",
-      })
+        title: 'Erro',
+        description:
+          error instanceof Error
+            ? error.message
+            : 'Erro ao cadastrar paciente. Tente novamente.',
+        variant: 'destructive',
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   // Format CPF as user types (for display only)
   const formatCPF = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "")
+    let value = e.target.value.replace(/\D/g, '');
     if (value.length <= 11) {
-      value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
-      cpfForm.setValue("cpf", value)
+      value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+      cpfForm.setValue('cpf', value);
     }
-  }
+  };
 
   // Format phone number as user types (for display only)
   const formatPhone = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "")
+    let value = e.target.value.replace(/\D/g, '');
     if (value.length <= 11) {
       if (value.length > 10) {
-        value = value.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")
+        value = value.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
       } else {
-        value = value.replace(/(\d{2})(\d{4})(\d{4})/, "($1) $2-$3")
+        value = value.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
       }
-      patientForm.setValue("phone", value)
+      patientForm.setValue('phone', value);
     }
-  }
+  };
 
   // Format CEP as user types
   const formatCEP = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, "")
+    let value = e.target.value.replace(/\D/g, '');
     if (value.length <= 8) {
-      value = value.replace(/(\d{5})(\d{3})/, "$1-$2")
-      patientForm.setValue("zipCode", value)
+      value = value.replace(/(\d{5})(\d{3})/, '$1-$2');
+      patientForm.setValue('zipCode', value);
     }
-  }
+  };
 
   return (
     <>
-      {step === "cpf" && (
+      {step === 'cpf' && (
         <Card>
           <CardHeader>
             <CardTitle>Verificação de Paciente</CardTitle>
-            <CardDescription>Por favor, informe seu CPF para verificarmos seu cadastro</CardDescription>
+            <CardDescription>
+              Por favor, informe seu CPF para verificarmos seu cadastro
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...cpfForm}>
-              <form onSubmit={cpfForm.handleSubmit(onCPFSubmit)} className="space-y-6">
+              <form
+                onSubmit={cpfForm.handleSubmit(onCPFSubmit)}
+                className="space-y-6"
+              >
                 <FormField
                   control={cpfForm.control}
                   name="cpf"
@@ -219,9 +257,9 @@ export default function PatientForm() {
                         <Input
                           placeholder="000.000.000-00"
                           {...field}
-                          onChange={(e) => {
-                            field.onChange(e)
-                            formatCPF(e)
+                          onChange={e => {
+                            field.onChange(e);
+                            formatCPF(e);
                           }}
                         />
                       </FormControl>
@@ -230,7 +268,7 @@ export default function PatientForm() {
                   )}
                 />
                 <Button type="submit" className="w-full" disabled={isLoading}>
-                  {isLoading ? "Verificando..." : "Verificar"}
+                  {isLoading ? 'Verificando...' : 'Verificar'}
                 </Button>
               </form>
             </Form>
@@ -238,33 +276,49 @@ export default function PatientForm() {
         </Card>
       )}
 
-      {step === "exists" && (
+      {step === 'exists' && (
         <Card>
           <CardHeader>
             <CardTitle>Paciente Encontrado</CardTitle>
-            <CardDescription>Seus dados já estão em nosso sistema</CardDescription>
+            <CardDescription>
+              Seus dados já estão em nosso sistema
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="rounded-lg bg-blue-50 p-4 text-blue-800">
-              <p>Obrigado por confirmar seu CPF. Seus dados já estão registrados em nosso sistema.</p>
-              <p className="mt-2 font-medium">Por favor, aguarde o contato do dentista.</p>
+              <p>
+                Obrigado por confirmar seu CPF. Seus dados já estão registrados
+                em nosso sistema.
+              </p>
+              <p className="mt-2 font-medium">
+                Por favor, aguarde o contato do dentista.
+              </p>
             </div>
-            <Button variant="outline" className="w-full" onClick={() => setStep("cpf")}>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setStep('cpf')}
+            >
               Voltar
             </Button>
           </CardContent>
         </Card>
       )}
 
-      {step === "register" && (
+      {step === 'register' && (
         <Card>
           <CardHeader>
             <CardTitle>Cadastro de Paciente</CardTitle>
-            <CardDescription>Complete seu cadastro com as informações abaixo</CardDescription>
+            <CardDescription>
+              Complete seu cadastro com as informações abaixo
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Form {...patientForm}>
-              <form onSubmit={patientForm.handleSubmit(onPatientSubmit)} className="space-y-6">
+              <form
+                onSubmit={patientForm.handleSubmit(onPatientSubmit)}
+                className="space-y-6"
+              >
                 <FormField
                   control={patientForm.control}
                   name="name"
@@ -286,7 +340,11 @@ export default function PatientForm() {
                     <FormItem>
                       <FormLabel>Email</FormLabel>
                       <FormControl>
-                        <Input type="email" placeholder="seu@email.com" {...field} />
+                        <Input
+                          type="email"
+                          placeholder="seu@email.com"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -303,9 +361,9 @@ export default function PatientForm() {
                         <Input
                           placeholder="(00) 00000-0000"
                           {...field}
-                          onChange={(e) => {
-                            field.onChange(e)
-                            formatPhone(e)
+                          onChange={e => {
+                            field.onChange(e);
+                            formatPhone(e);
                           }}
                         />
                       </FormControl>
@@ -324,7 +382,10 @@ export default function PatientForm() {
                       <FormItem>
                         <FormLabel>Rua/Avenida</FormLabel>
                         <FormControl>
-                          <Input placeholder="Rua/Avenida, número, complemento" {...field} />
+                          <Input
+                            placeholder="Rua/Avenida, número, complemento"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -341,9 +402,9 @@ export default function PatientForm() {
                           <Input
                             placeholder="00000-000"
                             {...field}
-                            onChange={(e) => {
-                              field.onChange(e)
-                              formatCEP(e)
+                            onChange={e => {
+                              field.onChange(e);
+                              formatCEP(e);
                             }}
                           />
                         </FormControl>
@@ -374,7 +435,10 @@ export default function PatientForm() {
                         <FormItem>
                           <FormLabel>Estado</FormLabel>
                           <FormControl>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <Select
+                              onValueChange={field.onChange}
+                              defaultValue={field.value}
+                            >
                               <SelectTrigger>
                                 <SelectValue placeholder="UF" />
                               </SelectTrigger>
@@ -430,19 +494,23 @@ export default function PatientForm() {
                         >
                           <FormItem className="flex items-center space-x-3 space-y-0">
                             <FormControl>
-                              <RadioGroupItem value="masculino" />
+                              <RadioGroupItem value="male" />
                             </FormControl>
-                            <FormLabel className="font-normal">Masculino</FormLabel>
+                            <FormLabel className="font-normal">
+                              Masculino
+                            </FormLabel>
                           </FormItem>
                           <FormItem className="flex items-center space-x-3 space-y-0">
                             <FormControl>
-                              <RadioGroupItem value="feminino" />
+                              <RadioGroupItem value="female" />
                             </FormControl>
-                            <FormLabel className="font-normal">Feminino</FormLabel>
+                            <FormLabel className="font-normal">
+                              Feminino
+                            </FormLabel>
                           </FormItem>
                           <FormItem className="flex items-center space-x-3 space-y-0">
                             <FormControl>
-                              <RadioGroupItem value="outro" />
+                              <RadioGroupItem value="other" />
                             </FormControl>
                             <FormLabel className="font-normal">Outro</FormLabel>
                           </FormItem>
@@ -460,18 +528,23 @@ export default function PatientForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Dia</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Dia" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
-                              <SelectItem key={day} value={day.toString()}>
-                                {day}
-                              </SelectItem>
-                            ))}
+                            {Array.from({ length: 31 }, (_, i) => i + 1).map(
+                              day => (
+                                <SelectItem key={day} value={day.toString()}>
+                                  {day}
+                                </SelectItem>
+                              )
+                            )}
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -485,7 +558,10 @@ export default function PatientForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Mês</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Mês" />
@@ -517,14 +593,20 @@ export default function PatientForm() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Ano</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Ano" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent className="max-h-[200px]">
-                            {Array.from({ length: 100 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                            {Array.from(
+                              { length: 100 },
+                              (_, i) => new Date().getFullYear() - i
+                            ).map(year => (
                               <SelectItem key={year} value={year.toString()}>
                                 {year}
                               </SelectItem>
@@ -538,7 +620,9 @@ export default function PatientForm() {
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Informações do Convênio</h3>
+                  <h3 className="text-lg font-medium">
+                    Informações do Convênio
+                  </h3>
 
                   <FormField
                     control={patientForm.control}
@@ -548,11 +632,11 @@ export default function PatientForm() {
                         <FormLabel>Possui convênio odontológico?</FormLabel>
                         <FormControl>
                           <RadioGroup
-                            onValueChange={(value) => {
-                              field.onChange(value)
-                              if (value === "false") {
-                                patientForm.setValue("insuranceName", "")
-                                patientForm.setValue("insuranceNumber", "")
+                            onValueChange={value => {
+                              field.onChange(value);
+                              if (value === 'false') {
+                                patientForm.setValue('insuranceName', '');
+                                patientForm.setValue('insuranceNumber', '');
                               }
                             }}
                             defaultValue={field.value}
@@ -577,7 +661,7 @@ export default function PatientForm() {
                     )}
                   />
 
-                  {patientForm.watch("hasInsurance") === "true" && (
+                  {patientForm.watch('hasInsurance') === 'true' && (
                     <>
                       <FormField
                         control={patientForm.control}
@@ -586,20 +670,39 @@ export default function PatientForm() {
                           <FormItem>
                             <FormLabel>Convênio</FormLabel>
                             <FormControl>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <Select
+                                onValueChange={field.onChange}
+                                defaultValue={field.value}
+                              >
                                 <SelectTrigger>
                                   <SelectValue placeholder="Selecione o convênio" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="Sulamérica">Sulamérica</SelectItem>
+                                  <SelectItem value="Sulamérica">
+                                    Sulamérica
+                                  </SelectItem>
                                   <SelectItem value="Amil">Amil</SelectItem>
-                                  <SelectItem value="Hapvida">Hapvida</SelectItem>
-                                  <SelectItem value="Porto Seguro">Porto Seguro</SelectItem>
-                                  <SelectItem value="Careplus">Careplus</SelectItem>
-                                  <SelectItem value="Dental Brasil">Dental Brasil</SelectItem>
-                                  <SelectItem value="Crown Odonto">Crown Odonto</SelectItem>
-                                  <SelectItem value="Odontoprev">Odontoprev</SelectItem>
-                                  <SelectItem value="Bradesco">Bradesco</SelectItem>
+                                  <SelectItem value="Hapvida">
+                                    Hapvida
+                                  </SelectItem>
+                                  <SelectItem value="Porto Seguro">
+                                    Porto Seguro
+                                  </SelectItem>
+                                  <SelectItem value="Careplus">
+                                    Careplus
+                                  </SelectItem>
+                                  <SelectItem value="Dental Brasil">
+                                    Dental Brasil
+                                  </SelectItem>
+                                  <SelectItem value="Crown Odonto">
+                                    Crown Odonto
+                                  </SelectItem>
+                                  <SelectItem value="Odontoprev">
+                                    Odontoprev
+                                  </SelectItem>
+                                  <SelectItem value="Bradesco">
+                                    Bradesco
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>
@@ -615,7 +718,10 @@ export default function PatientForm() {
                           <FormItem>
                             <FormLabel>Número do Convênio</FormLabel>
                             <FormControl>
-                              <Input placeholder="Número do convênio" {...field} />
+                              <Input
+                                placeholder="Número do convênio"
+                                {...field}
+                              />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -626,11 +732,16 @@ export default function PatientForm() {
                 </div>
 
                 <div className="flex gap-4">
-                  <Button type="button" variant="outline" className="w-full" onClick={() => setStep("cpf")}>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => setStep('cpf')}
+                  >
                     Voltar
                   </Button>
                   <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading ? "Cadastrando..." : "Cadastrar"}
+                    {isLoading ? 'Cadastrando...' : 'Cadastrar'}
                   </Button>
                 </div>
               </form>
@@ -639,23 +750,31 @@ export default function PatientForm() {
         </Card>
       )}
 
-      {step === "success" && (
+      {step === 'success' && (
         <Card>
           <CardHeader>
             <CardTitle>Cadastro Concluído</CardTitle>
-            <CardDescription>Seus dados foram registrados com sucesso</CardDescription>
+            <CardDescription>
+              Seus dados foram registrados com sucesso
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="rounded-lg bg-green-50 p-4 text-green-800">
               <p>Obrigado por completar seu cadastro.</p>
-              <p className="mt-2 font-medium">Por favor, aguarde ser chamado pelo dentista.</p>
+              <p className="mt-2 font-medium">
+                Por favor, aguarde ser chamado pelo dentista.
+              </p>
             </div>
-            <Button variant="outline" className="w-full" onClick={() => setStep("cpf")}>
+            <Button
+              variant="outline"
+              className="w-full"
+              onClick={() => setStep('cpf')}
+            >
               Voltar ao Início
             </Button>
           </CardContent>
         </Card>
       )}
     </>
-  )
+  );
 }

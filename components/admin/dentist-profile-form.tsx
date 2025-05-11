@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
 
+import { supabaseClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -24,10 +26,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/auth-context';
-import { createClient } from '@/utils/supabase/client';
+import { useDentist } from '@/contexts/dentist-context';
 
-// Profile schema
 const profileSchema = z
   .object({
     name: z
@@ -45,7 +45,6 @@ const profileSchema = z
   })
   .refine(
     data => {
-      // If any password field is filled, all must be filled
       const hasPassword =
         !!data.current_password ||
         !!data.new_password ||
@@ -67,7 +66,6 @@ const profileSchema = z
   )
   .refine(
     data => {
-      // If changing password, new and confirm must match
       if (data.new_password && data.confirm_password) {
         return data.new_password === data.confirm_password;
       }
@@ -79,90 +77,47 @@ const profileSchema = z
     }
   );
 
-export default function DentistProfile() {
+export default function DentistProfileForm() {
+  const router = useRouter();
+  const { toast } = useToast();
+  const dentist = useDentist();
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { dentist, refreshDentistProfile } = useAuth();
-  const { toast } = useToast();
-  const supabase = createClient();
 
-  // Profile form
   const form = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      name: dentist?.name || '',
-      specialty: dentist?.specialty || '',
-      registration_number: dentist?.registration_number || '',
+      name: dentist.name,
+      specialty: dentist.specialty || '',
+      registration_number: dentist.registration_number || '',
       current_password: '',
       new_password: '',
       confirm_password: '',
     },
   });
 
-  // Handle profile submission
-  const onSubmit = async (data: z.infer<typeof profileSchema>) => {
+  const onSubmit = async data => {
+    setIsSaving(true);
+    setError(null);
     try {
-      setIsSaving(true);
-      setError(null);
-
-      if (!dentist) {
-        throw new Error('Perfil de dentista não encontrado');
-      }
-
-      // Check if we're trying to update the password
-      const passwordUpdateRequested = !!(
-        data.current_password &&
-        data.new_password &&
-        data.confirm_password
-      );
-
-      // If password update is requested, handle it first
-      if (passwordUpdateRequested) {
-        // Step 1: Verify current password
-        const { data: authData, error: signInError } =
-          await supabase.auth.signInWithPassword({
+      // handle password update
+      const wantsPassword =
+        data.current_password && data.new_password && data.confirm_password;
+      if (wantsPassword) {
+        const { error: authError } =
+          await supabaseClient.auth.signInWithPassword({
             email: dentist.email,
-            password: data.current_password!,
+            password: data.current_password,
           });
-
-        if (signInError || !authData.user) {
-          toast({
-            title: 'Senha incorreta',
-            description:
-              'A senha atual informada está incorreta. Por favor, verifique e tente novamente.',
-            variant: 'destructive',
-          });
-          setError(
-            'Senha atual incorreta. Por favor, verifique e tente novamente.'
-          );
-          setIsSaving(false);
-          return;
-        }
-
-        // Step 2: Update password
-        const { error: passwordError } = await supabase.auth.updateUser({
-          password: data.new_password!,
+        if (authError) throw new Error('Senha atual incorreta');
+        const { error: pwdError } = await supabaseClient.auth.updateUser({
+          password: data.new_password,
         });
-
-        if (passwordError) {
-          toast({
-            title: 'Erro ao atualizar senha',
-            description: passwordError.message,
-            variant: 'destructive',
-          });
-          setError(passwordError.message);
-          setIsSaving(false);
-          return;
-        }
-
-        toast({
-          title: 'Senha atualizada',
-          description: 'Sua senha foi atualizada com sucesso.',
-        });
+        if (pwdError) throw pwdError;
+        toast({ title: 'Senha atualizada' });
       }
 
-      // Update dentist profile
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseClient
         .from('dentists')
         .update({
           name: data.name,
@@ -171,81 +126,44 @@ export default function DentistProfile() {
           updated_at: new Date().toISOString(),
         })
         .eq('id', dentist.id);
+      if (updateError) throw updateError;
 
-      if (updateError) {
-        toast({
-          title: 'Erro ao atualizar perfil',
-          description: updateError.message,
-          variant: 'destructive',
-        });
-        setError(updateError.message);
-        setIsSaving(false);
-        return;
-      }
-
-      // Reset password fields
-      form.setValue('current_password', '');
-      form.setValue('new_password', '');
-      form.setValue('confirm_password', '');
-
-      // Refresh the dentist profile in the auth context
-      await refreshDentistProfile();
-
-      toast({
-        title: 'Perfil atualizado',
-        description: 'Suas informações foram atualizadas com sucesso.',
+      form.reset({
+        ...data,
+        current_password: '',
+        new_password: '',
+        confirm_password: '',
       });
-    } catch (error) {
-      toast({
-        title: 'Erro',
-        description:
-          error instanceof Error
-            ? error.message
-            : 'Erro ao atualizar perfil. Tente novamente.',
-        variant: 'destructive',
-      });
-      setError(
-        error instanceof Error
-          ? error.message
-          : 'Erro ao atualizar perfil. Tente novamente.'
-      );
+
+      toast({ title: 'Perfil atualizado' });
+      router.refresh();
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'Erro ao atualizar perfil';
+      setError(msg);
+      toast({ title: 'Erro', description: msg, variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
   };
-
-  if (!dentist) {
-    return (
-      <Alert variant="destructive">
-        <AlertTitle>Erro</AlertTitle>
-        <AlertDescription>
-          Perfil não encontrado. Por favor, faça login novamente.
-        </AlertDescription>
-      </Alert>
-    );
-  }
 
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-blue-800 md:text-3xl">
         Meu Perfil
       </h1>
-
       {error && (
         <Alert variant="destructive">
           <AlertTitle>Erro</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
-
       <Card>
         <CardHeader>
           <CardTitle>Informações Pessoais</CardTitle>
-          <CardDescription>
-            Atualize suas informações pessoais e credenciais
-          </CardDescription>
+          <CardDescription>Atualize suas informações</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               <FormField

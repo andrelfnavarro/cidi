@@ -1,14 +1,12 @@
-import AdvancedPatientSearch from "@/components/admin/advanced-patient-search"
-import PatientSearch from "@/components/admin/patient-search"
-import AuthCheck from "@/components/admin/auth-check"
+import React from 'react';
+import PatientSearch from '@/components/admin/patient-search';
+import AdvancedPatientSearch from '@/components/admin/advanced-patient-search';
 
-export default function PatientsPage() {
+export default function PacientesPage() {
   return (
-    <AuthCheck>
-      <div className="mx-auto max-w-3xl space-y-6">
-        <PatientSearch />
-        <AdvancedPatientSearch />
-      </div>
-    </AuthCheck>
-  )
+    <div className="mx-auto max-w-3xl space-y-6">
+      <PatientSearch />
+      <AdvancedPatientSearch />
+    </div>
+  );
 }

@@ -1,39 +1,47 @@
-import { NextResponse } from "next/server"
-import { createClient } from "@/utils/supabase/server"
+import { createClient } from '@/utils/supabase/server';
+import { NextResponse } from 'next/server';
 
 export async function POST(request: Request) {
   try {
-    const treatment = await request.json()
+    const { patientId } = await request.json();
 
-    if (!treatment.patient_id || !treatment.dentist_id || !treatment.description) {
-      return NextResponse.json({ error: "Dados incompletos" }, { status: 400 })
+    if (!patientId) {
+      return NextResponse.json(
+        { error: 'ID do paciente é obrigatório' },
+        { status: 400 }
+      );
     }
 
-    // Create the Supabase client using the new SSR integration
-    const supabase = await createClient()
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-    // Insert treatment
+    // Criar novo tratamento
     const { data, error } = await supabase
-      .from("treatments")
+      .from('treatments')
       .insert({
-        patient_id: treatment.patient_id,
-        dentist_id: treatment.dentist_id,
-        description: treatment.description,
-        anamnesis: treatment.anamnesis || {},
-        status: "active",
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        patient_id: patientId,
+        created_by: user?.id,
+        updated_by: user?.id,
+        status: 'open',
       })
-      .select()
+      .select();
 
     if (error) {
-      console.error("Error creating treatment:", error)
-      return NextResponse.json({ error: "Error creating treatment" }, { status: 500 })
+      console.error('Erro ao criar tratamento:', error);
+      return NextResponse.json(
+        { error: 'Erro ao criar tratamento' },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ success: true, treatment: data[0] })
+    return NextResponse.json({ success: true, treatment: data[0] });
   } catch (error) {
-    console.error("Error processing request:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error('Erro ao processar requisição:', error);
+    return NextResponse.json(
+      { error: 'Erro interno do servidor' },
+      { status: 500 }
+    );
   }
 }

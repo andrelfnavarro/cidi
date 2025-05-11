@@ -6,10 +6,10 @@ export async function POST(request: Request) {
 
   // Check if user is authenticated
   const {
-    data: { session },
-  } = await supabase.auth.getSession();
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!session) {
+  if (!user) {
     return NextResponse.json(
       { error: 'Unauthorized: You must be logged in' },
       { status: 401 }
@@ -18,18 +18,11 @@ export async function POST(request: Request) {
 
   try {
     // Parse the request body
-    const { treatmentId, dentistId, finalized_at } = await request.json();
+    const { treatmentId } = await request.json();
 
     if (!treatmentId) {
       return NextResponse.json(
         { error: 'TreatmentId é obrigatório' },
-        { status: 400 }
-      );
-    }
-
-    if (!dentistId) {
-      return NextResponse.json(
-        { error: 'DentistId é obrigatório' },
         { status: 400 }
       );
     }
@@ -39,9 +32,9 @@ export async function POST(request: Request) {
       .from('treatments')
       .update({
         status: 'finalized',
-        finalized_at: finalized_at,
+        finalized_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        updated_by: dentistId,
+        updated_by: user.id,
       })
       .eq('id', treatmentId)
       .select();

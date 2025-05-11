@@ -1,3 +1,4 @@
+// components/admin/login-form.tsx
 'use client';
 
 import { useState } from 'react';
@@ -6,6 +7,7 @@ import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
+import { supabaseClient } from '@/utils/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -24,11 +26,9 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/auth-context';
 import { InfoIcon } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
-// Login schema
 const loginSchema = z.object({
   email: z.string().email({ message: 'Email inválido' }),
   password: z
@@ -36,63 +36,47 @@ const loginSchema = z.object({
     .min(6, { message: 'Senha deve ter pelo menos 6 caracteres' }),
 });
 
+type LoginData = z.infer<typeof loginSchema>;
+
 export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
-  const { signIn } = useAuth();
 
-  // Login form
-  const form = useForm<z.infer<typeof loginSchema>>({
+  const form = useForm<LoginData>({
     resolver: zodResolver(loginSchema),
-    defaultValues: {
-      email: '',
-      password: '',
-    },
+    defaultValues: { email: '', password: '' },
   });
 
-  // Handle login submission
-  const onSubmit = async (data: z.infer<typeof loginSchema>) => {
-    try {
-      setIsLoading(true);
-      setLoginError(null);
+  const onSubmit = async (data: LoginData) => {
+    setIsLoading(true);
+    setLoginError(null);
 
-      const { error } = await signIn(data.email, data.password);
+    const { data: res, error } = await supabaseClient.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
 
-      if (error) {
-        if (error.message.includes('não encontrado como dentista')) {
-          setLoginError(
-            'Sua conta existe, mas não está vinculada a um dentista. Entre em contato com o administrador.'
-          );
-        } else if (error.message.includes('Invalid login credentials')) {
-          setLoginError(
-            'Email ou senha incorretos. Verifique suas credenciais e tente novamente.'
-          );
-        } else {
-          setLoginError(
-            error.message || 'Erro ao fazer login. Tente novamente.'
-          );
-        }
-        return;
-      }
-
-      toast({
-        title: 'Login realizado com sucesso!',
-        description: 'Bem-vindo ao portal do dentista.',
-      });
-
-      // Redirecionar para a página de busca de pacientes
-      router.push('/admin/pacientes');
-    } catch (error) {
-      setLoginError(
-        error instanceof Error
-          ? error.message
-          : 'Erro ao fazer login. Tente novamente.'
-      );
-    } finally {
+    if (error) {
+      const msg = error.message.includes('não encontrado como dentista')
+        ? 'Conta não vinculada a um dentista. Contate o admin.'
+        : error.message.includes('Invalid login credentials')
+        ? 'Email ou senha incorretos.'
+        : 'Erro ao fazer login. Tente novamente.';
+      setLoginError(msg);
       setIsLoading(false);
+      return;
     }
+
+    // success!
+    toast({
+      title: 'Login realizado com sucesso!',
+      description: 'Bem-vindo ao portal do dentista.',
+    });
+
+    // push to pacientes
+    router.push('/admin/pacientes');
   };
 
   return (
@@ -121,11 +105,7 @@ export default function LoginForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input
-                      type="email"
-                      placeholder="seu@email.com"
-                      {...field}
-                    />
+                    <Input placeholder="seu@email.com" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -139,7 +119,7 @@ export default function LoginForm() {
                 <FormItem>
                   <FormLabel>Senha</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="Sua senha" {...field} />
+                    <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

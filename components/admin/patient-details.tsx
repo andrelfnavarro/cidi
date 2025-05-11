@@ -174,9 +174,9 @@ export default function PatientDetails({ patientId }: { patientId: string }) {
                       </p>
                       <p>
                         <span className="font-medium">Gênero:</span>{' '}
-                        {patient.gender === 'masculino'
+                        {patient.gender === 'male'
                           ? 'Masculino'
-                          : patient.gender === 'feminino'
+                          : patient.gender === 'female'
                           ? 'Feminino'
                           : 'Outro'}
                       </p>

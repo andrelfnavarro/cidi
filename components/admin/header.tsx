@@ -21,7 +21,11 @@ export default function AdminHeader() {
   const dentist = useDentist();
 
   const handleSignOut = async () => {
-    await supabaseClient.auth.signOut();
+    const { error } = await supabaseClient.auth.signOut();
+    if (error) {
+      console.error('Error signing out:', error);
+      return;
+    }
     router.push('/admin');
   };
 
@@ -34,40 +38,39 @@ export default function AdminHeader() {
         >
           C.I.D.I - Portal do Dentista
         </Link>
-        {dentist && (
-          <div className="flex items-center gap-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
-                  <UserIcon size={16} />
-                  <span>{dentist.name}</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push('/admin/perfil')}>
-                  Perfil
-                </DropdownMenuItem>
-                {dentist.is_admin && (
-                  <DropdownMenuItem
-                    onClick={() => router.push('/admin/dentistas')}
-                  >
-                    Gerenciar Dentistas
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
+
+        <div className="flex items-center gap-4">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="flex items-center gap-2">
+                <UserIcon size={16} />
+                <span>{dentist.name}</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Minha Conta</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => router.push('/admin/perfil')}>
+                Perfil
+              </DropdownMenuItem>
+              {dentist.is_admin && (
                 <DropdownMenuItem
-                  onClick={handleSignOut}
-                  className="text-red-600"
+                  onClick={() => router.push('/admin/dentistas')}
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Sair
+                  Gerenciar Dentistas
                 </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={handleSignOut}
+                className="text-red-600"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
     </header>
   );

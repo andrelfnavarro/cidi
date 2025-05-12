@@ -184,7 +184,8 @@ export default function PatientForm() {
 
       toast({
         title: 'Cadastro realizado com sucesso!',
-        description: 'Seus dados foram salvos. Aguarde o contato do dentista.',
+        description:
+          'Seus dados foram salvos. Aguarde ser chamado pelo dentista.',
       });
     } catch (error) {
       toast({
@@ -236,9 +237,9 @@ export default function PatientForm() {
       {step === 'cpf' && (
         <Card>
           <CardHeader>
-            <CardTitle>Verificação de Paciente</CardTitle>
+            <CardTitle>Cadastro de Paciente</CardTitle>
             <CardDescription>
-              Por favor, informe seu CPF para verificarmos seu cadastro
+              Por favor, informe seu CPF para verificarmos seu cadastro.
             </CardDescription>
           </CardHeader>
           <CardContent>

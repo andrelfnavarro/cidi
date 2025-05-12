@@ -11,8 +11,10 @@ export default async function AdminPage() {
   if (user) redirect('/admin/pacientes');
 
   return (
-    <div className="mx-auto max-w-md">
-      <LoginForm />
+    <div className="flex h-screen flex-col items-center justify-center">
+      <div className="mx-auto max-w-md w-full">
+        <LoginForm />
+      </div>
     </div>
   );
 }

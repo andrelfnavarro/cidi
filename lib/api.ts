@@ -366,3 +366,105 @@ export async function advancedSearchPatients(
     throw error;
   }
 }
+
+// Function to upload a file for a treatment
+export async function uploadTreatmentFile(
+  treatmentId: string,
+  file: File,
+  fileName?: string
+): Promise<any> {
+  try {
+    console.log('Starting file upload:', { treatmentId, fileName: fileName || file.name, fileSize: file.size });
+    
+    const formData = new FormData();
+    formData.append('treatmentId', treatmentId);
+    formData.append('file', file);
+    if (fileName) {
+      formData.append('fileName', fileName);
+    }
+
+    console.log('FormData prepared, sending request...');
+    
+    const response = await fetch('/api/admin/treatments/upload-file', {
+      method: 'POST',
+      body: formData,
+    });
+
+    console.log('Response received:', response.status, response.statusText);
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Upload failed with error:', errorData);
+      throw new Error(errorData.error || 'Erro ao enviar arquivo');
+    }
+
+    const result = await response.json();
+    console.log('Upload successful:', result);
+    return result;
+  } catch (error) {
+    console.error('Exception in uploadTreatmentFile:', error);
+    throw error;
+  }
+}
+
+// Function to get files for a treatment
+export async function getTreatmentFiles(treatmentId: string): Promise<any> {
+  try {
+    const response = await fetch(`/api/admin/treatments/list-files/${treatmentId}`);
+
+    if (!response.ok) {
+      throw new Error('Erro ao buscar arquivos');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Erro ao buscar arquivos:', error);
+    throw error;
+  }
+}
+
+// Function to get a presigned URL for a file
+export async function getFilePresignedUrl(filePath: string): Promise<string> {
+  try {
+    const response = await fetch('/api/admin/treatments/presigned-url', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ filePath }),
+    });
+
+    if (!response.ok) {
+      throw new Error('Erro ao gerar URL para acesso ao arquivo');
+    }
+
+    const data = await response.json();
+    return data.signedUrl;
+  } catch (error) {
+    console.error('Erro ao gerar URL:', error);
+    throw error;
+  }
+}
+
+// Function to delete a file
+export async function deleteTreatmentFile(fileId: string): Promise<any> {
+  try {
+    const response = await fetch('/api/admin/treatments/delete-file', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ fileId }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Erro ao excluir arquivo');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Erro ao excluir arquivo:', error);
+    throw error;
+  }
+}

@@ -14,6 +14,7 @@ import { getTreatmentById, finalizeTreatment } from '@/lib/api';
 import AnamnesisForm from '@/components/admin/anamnesis-form';
 import PlanningForm from '@/components/admin/planning-form';
 import PaymentForm from '@/components/admin/payment-form';
+import TreatmentFiles from '@/components/admin/treatment-files';
 import TrackingInfo from '@/components/admin/tracking-info';
 import { useDentist } from '@/contexts/dentist-context';
 
@@ -186,10 +187,11 @@ export default function TreatmentDetails({
       </div>
 
       <Tabs defaultValue="anamnesis">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="anamnesis">Anamnese</TabsTrigger>
           <TabsTrigger value="planning">Planejamento</TabsTrigger>
           <TabsTrigger value="payment">Orçamento</TabsTrigger>
+          <TabsTrigger value="files">Arquivos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="anamnesis" className="mt-6">
@@ -227,6 +229,13 @@ export default function TreatmentDetails({
             treatmentItems={treatment.treatment_items}
             isReadOnly={isTreatmentFinalized && !editMode}
             onSaved={fetchTreatment}
+          />
+        </TabsContent>
+
+        <TabsContent value="files" className="mt-6">
+          <TreatmentFiles
+            treatmentId={treatmentId}
+            isReadOnly={isTreatmentFinalized && !editMode}
           />
         </TabsContent>
       </Tabs>

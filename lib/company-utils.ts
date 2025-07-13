@@ -13,6 +13,12 @@ export async function validateCompanySlug(slug: string): Promise<Company | null>
     return null;
   }
 
+  // Validate slug format before querying database
+  if (!isValidSlug(normalizedSlug)) {
+    console.warn('Invalid slug format:', normalizedSlug);
+    return null;
+  }
+
   try {
     const supabase = await createClient();
     
@@ -34,9 +40,29 @@ export async function validateCompanySlug(slug: string): Promise<Company | null>
 }
 
 export function isValidSlug(slug: string): boolean {
-  // Basic slug validation: alphanumeric and hyphens only
-  const slugRegex = /^[a-z0-9-]+$/;
-  return slugRegex.test(slug);
+  // Improved slug validation:
+  // - Must start and end with alphanumeric characters
+  // - Can contain hyphens between alphanumeric characters
+  // - No consecutive hyphens
+  // - Length between 2-50 characters
+  const slugRegex = /^[a-z0-9]([a-z0-9-]*[a-z0-9])?$/;
+  
+  // Check basic pattern
+  if (!slugRegex.test(slug)) {
+    return false;
+  }
+  
+  // Check length constraints
+  if (slug.length < 2 || slug.length > 50) {
+    return false;
+  }
+  
+  // Check for consecutive hyphens
+  if (slug.includes('--')) {
+    return false;
+  }
+  
+  return true;
 }
 
 export async function getCompanyByDentistId(dentistId: string): Promise<Company | null> {

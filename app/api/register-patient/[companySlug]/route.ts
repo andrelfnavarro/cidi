@@ -60,7 +60,7 @@ export async function POST(
       .from('patients')
       .select('id, email, cpf')
       .eq('company_id', company.id)
-      .or(`email.eq.${patient.email},cpf.eq.${patient.cpf}`)
+      .or(`email.eq."${patient.email}",cpf.eq."${patient.cpf}"`)
       .maybeSingle();
 
     if (lookupError) {

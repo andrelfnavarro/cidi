@@ -28,10 +28,10 @@ export async function POST(request: Request) {
       .from('patients')
       .select('*')
       .or(
-        `name.ilike.%${searchTerm}%,` +
-          `email.ilike.%${searchTerm}%,` +
-          `cpf.ilike.%${normalizedSearchTerm}%,` +
-          `phone.ilike.%${normalizedSearchTerm}%`
+        `name.ilike."%${searchTerm}%",` +
+          `email.ilike."%${searchTerm}%",` +
+          `cpf.ilike."%${normalizedSearchTerm}%",` +
+          `phone.ilike."%${normalizedSearchTerm}%"`
       )
       .order('name')
       .limit(20);

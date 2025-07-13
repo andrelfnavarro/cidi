@@ -14,7 +14,7 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    // Get the current session to verify the user is authenticated
+    // RLS policies will automatically filter by company, so we just need to authenticate
     const {
       data: { session },
     } = await supabase.auth.getSession();
@@ -23,23 +23,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    // Get the current dentist's company_id
-    const { data: currentDentist, error: dentistError } = await supabase
-      .from('dentists')
-      .select('company_id')
-      .eq('id', session.user.id)
-      .single();
-
-    if (dentistError || !currentDentist) {
-      return NextResponse.json({ error: 'Dentista não encontrado' }, { status: 404 });
-    }
-
-    // Buscar paciente pelo CPF dentro da empresa do dentista
+    // Buscar paciente pelo CPF - RLS will filter by company automatically
     const { data, error } = await supabase
       .from('patients')
       .select('id')
       .eq('cpf', normalizedCpf)
-      .eq('company_id', currentDentist.company_id)
       .single();
 
     if (error) {

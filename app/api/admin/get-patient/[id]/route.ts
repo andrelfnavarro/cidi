@@ -26,23 +26,11 @@ export async function GET(
       return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
     }
 
-    // Get the current dentist's company_id
-    const { data: currentDentist, error: dentistError } = await supabase
-      .from('dentists')
-      .select('company_id')
-      .eq('id', session.user.id)
-      .single();
-
-    if (dentistError || !currentDentist) {
-      return NextResponse.json({ error: 'Dentista não encontrado' }, { status: 404 });
-    }
-
-    // Buscar paciente pelo ID dentro da empresa do dentista
+    // Buscar paciente pelo ID - RLS will filter by company automatically
     const { data, error } = await supabase
       .from('patients')
       .select('*')
       .eq('id', id)
-      .eq('company_id', currentDentist.company_id)
       .single();
 
     if (error) {

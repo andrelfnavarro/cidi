@@ -24,9 +24,13 @@ export async function checkCPF(cpf: string): Promise<boolean> {
 }
 
 // Função para registrar um novo paciente
-export async function registerPatient(patientData: any): Promise<any> {
+export async function registerPatient(patientData: any, companySlug?: string): Promise<any> {
   try {
-    const response = await fetch('/api/register-patient', {
+    const endpoint = companySlug 
+      ? `/api/register-patient/${companySlug}` 
+      : '/api/register-patient';
+      
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

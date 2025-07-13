@@ -17,7 +17,16 @@ export async function GET(
 
     const supabase = await createClient();
 
-    // Buscar paciente pelo ID
+    // Get the current session to verify the user is authenticated
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    // Buscar paciente pelo ID - RLS will filter by company automatically
     const { data, error } = await supabase
       .from('patients')
       .select('*')

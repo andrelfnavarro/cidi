@@ -21,10 +21,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Não autenticado" }, { status: 401 })
     }
 
-    // Verify if the current user is an admin
+    // Verify if the current user is an admin - RLS will handle company filtering
     const { data: currentDentist, error: dentistError } = await supabase
       .from("dentists")
-      .select("is_admin")
+      .select("is_admin, company_id")
       .eq("id", session.user.id)
       .single()
 
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     if (createUserResponse.error && createUserResponse.error.message.includes('email address has already been registered')) {
       console.log("Email already exists in Auth system. Checking if dentist record exists...")
       
-      // Check if there's a dentist record with this email
+      // Check if there's a dentist record with this email - RLS will filter by company
       const { data: existingDentist } = await supabase
         .from("dentists")
         .select("id")
@@ -108,7 +108,7 @@ export async function POST(request: Request) {
     
     console.log("Auth user ready:", authData.user.id)
 
-    // Then, create the dentist record
+    // Then, create the dentist record with the admin's company_id
     const { data: dentistData, error: dentistError2 } = await supabase
       .from("dentists")
       .insert({
@@ -118,6 +118,7 @@ export async function POST(request: Request) {
         specialty: data.specialty || null,
         registration_number: data.registration_number || null,
         is_admin: data.is_admin || false,
+        company_id: currentDentist.company_id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
       })

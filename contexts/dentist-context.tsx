@@ -8,6 +8,14 @@ export type Dentist = {
   specialty: string | null;
   registration_number: string | null;
   is_admin: boolean;
+  company_id: string;
+  company?: {
+    id: string;
+    name: string;
+    display_name?: string;
+    logo_url?: string;
+    primary_color?: string;
+  };
 };
 
 const DentistContext = createContext<Dentist | null>(null);

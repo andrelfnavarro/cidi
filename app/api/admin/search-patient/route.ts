@@ -14,7 +14,16 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
-    // Buscar paciente pelo CPF
+    // RLS policies will automatically filter by company, so we just need to authenticate
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    // Buscar paciente pelo CPF - RLS will filter by company automatically
     const { data, error } = await supabase
       .from('patients')
       .select('id')

@@ -11,18 +11,27 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
+    // Get the current session to verify the user is authenticated
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
     // Normalize the search term by removing all non-alphanumeric characters
     const normalizedSearchTerm = searchTerm.replace(/\D/g, '');
 
-    // Create a query to search by name, email, CPF, or phone
+    // Create a query to search by name, email, CPF, or phone - RLS will filter by company
     const { data, error } = await supabase
       .from('patients')
       .select('*')
       .or(
-        `name.ilike.%${searchTerm}%,` +
-          `email.ilike.%${searchTerm}%,` +
-          `cpf.ilike.%${normalizedSearchTerm}%,` +
-          `phone.ilike.%${normalizedSearchTerm}%`
+        `name.ilike."%${searchTerm}%",` +
+          `email.ilike."%${searchTerm}%",` +
+          `cpf.ilike."%${normalizedSearchTerm}%",` +
+          `phone.ilike."%${normalizedSearchTerm}%"`
       )
       .order('name')
       .limit(20);

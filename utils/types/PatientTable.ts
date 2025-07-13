@@ -13,6 +13,7 @@ export type PatientEntity = {
   has_insurance: boolean;
   insurance_name: string | null;
   insurance_number: string | null;
+  company_id: string;
   created_at?: string;
   updated_at?: string;
 };

@@ -14,7 +14,7 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Fetch all dentists
+    // Fetch dentists - RLS will filter by company automatically
     const { data: dentists, error } = await supabase
       .from("dentists")
       .select("*")

@@ -11,13 +11,34 @@ export async function POST(request: Request) {
 
     const supabase = await createClient();
 
+    // Get the current session to verify the user is authenticated
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      return NextResponse.json({ error: 'Não autenticado' }, { status: 401 });
+    }
+
+    // Get the current dentist's company_id
+    const { data: currentDentist, error: dentistError } = await supabase
+      .from('dentists')
+      .select('company_id')
+      .eq('id', session.user.id)
+      .single();
+
+    if (dentistError || !currentDentist) {
+      return NextResponse.json({ error: 'Dentista não encontrado' }, { status: 404 });
+    }
+
     // Normalize the search term by removing all non-alphanumeric characters
     const normalizedSearchTerm = searchTerm.replace(/\D/g, '');
 
-    // Create a query to search by name, email, CPF, or phone
+    // Create a query to search by name, email, CPF, or phone within the dentist's company
     const { data, error } = await supabase
       .from('patients')
       .select('*')
+      .eq('company_id', currentDentist.company_id)
       .or(
         `name.ilike.%${searchTerm}%,` +
           `email.ilike.%${searchTerm}%,` +

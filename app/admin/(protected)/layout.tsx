@@ -20,7 +20,22 @@ export default async function AdminLayout({
 
   const { data: dentist, error } = await supabase
     .from('dentists')
-    .select('id, name, email, specialty, registration_number, is_admin')
+    .select(`
+      id, 
+      name, 
+      email, 
+      specialty, 
+      registration_number, 
+      is_admin, 
+      company_id,
+      company:companies(
+        id,
+        name,
+        display_name,
+        logo_url,
+        primary_color
+      )
+    `)
     .eq('id', user.id)
     .single();
 

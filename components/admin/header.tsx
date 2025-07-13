@@ -29,14 +29,25 @@ export default function AdminHeader() {
     router.push('/admin');
   };
 
+  const companyDisplayName = dentist.company?.display_name || dentist.company?.name || 'Portal do Dentista';
+  const headerColor = dentist.company?.primary_color || '#1e40af';
+
   return (
     <header className="border-b bg-white">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <Link
           href="/admin/pacientes"
-          className="text-xl font-bold text-blue-800"
+          className="flex items-center gap-3 text-xl font-bold"
+          style={{ color: headerColor }}
         >
-          C.I.D.I - Portal do Dentista
+          {dentist.company?.logo_url && (
+            <img 
+              src={dentist.company.logo_url} 
+              alt={`${companyDisplayName} logo`}
+              className="h-8 w-auto object-contain"
+            />
+          )}
+          <span>{companyDisplayName} - Portal do Dentista</span>
         </Link>
 
         <div className="flex items-center gap-4">

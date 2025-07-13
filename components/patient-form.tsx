@@ -87,7 +87,12 @@ const patientSchema = z.object({
   insuranceNumber: z.string().optional(),
 });
 
-export default function PatientForm() {
+interface PatientFormProps {
+  companySlug?: string;
+  companyName?: string;
+}
+
+export default function PatientForm({ companySlug, companyName }: PatientFormProps = {}) {
   const [step, setStep] = useState<'cpf' | 'exists' | 'register' | 'success'>(
     'cpf'
   );
@@ -177,7 +182,7 @@ export default function PatientForm() {
       delete patientData.birthYear;
 
       // Registrar paciente no banco de dados
-      await registerPatient(patientData);
+      await registerPatient(patientData, companySlug);
 
       // Show success message
       setStep('success');
@@ -239,6 +244,11 @@ export default function PatientForm() {
           <CardHeader>
             <CardTitle>Cadastro de Paciente</CardTitle>
             <CardDescription>
+              {companyName && (
+                <span className="block text-sm font-medium text-blue-600 mb-1">
+                  {companyName}
+                </span>
+              )}
               Por favor, informe seu CPF para verificarmos seu cadastro.
             </CardDescription>
           </CardHeader>

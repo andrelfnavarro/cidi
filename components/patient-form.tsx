@@ -33,23 +33,16 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { checkCPF, registerPatient } from '@/lib/api';
+import { validateCPF, formatCEP, fetchAddressByCEP } from '@/lib/format-utils';
 
 // CPF validation schema
 const cpfSchema = z.object({
   cpf: z
     .string()
-    .min(11, { message: 'CPF deve ter 11 dígitos' })
-    .max(14, { message: 'CPF deve ter no máximo 14 caracteres' })
-    .refine(
-      value => {
-        // Remove non-digits for validation
-        const digits = value.replace(/\D/g, '');
-        return digits.length === 11;
-      },
-      {
-        message: 'CPF inválido',
-      }
-    ),
+    .min(1, { message: 'CPF é obrigatório' })
+    .refine(value => validateCPF(value), {
+      message: 'CPF inválido',
+    }),
 });
 
 // Full patient registration schema
@@ -61,6 +54,8 @@ const patientSchema = z.object({
   street: z
     .string()
     .min(3, { message: 'Endereço deve ter pelo menos 3 caracteres' }),
+  number: z.string().min(1, { message: 'Número é obrigatório' }),
+  complement: z.string().optional(),
   zipCode: z.string().min(8, { message: 'CEP inválido' }),
   city: z
     .string()
@@ -71,15 +66,21 @@ const patientSchema = z.object({
   gender: z.enum(['male', 'female', 'other'], {
     required_error: 'Por favor selecione um gênero',
   }),
-  birthDay: z.string({
-    required_error: 'Dia é obrigatório',
-  }),
-  birthMonth: z.string({
-    required_error: 'Mês é obrigatório',
-  }),
-  birthYear: z.string({
-    required_error: 'Ano é obrigatório',
-  }),
+  birthDay: z
+    .string({
+      required_error: 'Dia é obrigatório',
+    })
+    .min(1, { message: 'Dia é obrigatório' }),
+  birthMonth: z
+    .string({
+      required_error: 'Mês é obrigatório',
+    })
+    .min(1, { message: 'Mês é obrigatório' }),
+  birthYear: z
+    .string({
+      required_error: 'Ano é obrigatório',
+    })
+    .min(1, { message: 'Ano é obrigatório' }),
   hasInsurance: z.enum(['true', 'false'], {
     required_error: 'Por favor indique se possui convênio',
   }),
@@ -92,11 +93,15 @@ interface PatientFormProps {
   companyName?: string;
 }
 
-export default function PatientForm({ companySlug, companyName }: PatientFormProps = {}) {
+export default function PatientForm({
+  companySlug,
+  companyName,
+}: PatientFormProps = {}) {
   const [step, setStep] = useState<'cpf' | 'exists' | 'register' | 'success'>(
     'cpf'
   );
   const [isLoading, setIsLoading] = useState(false);
+  const [isCEPLoading, setIsCEPLoading] = useState(false);
   const { toast } = useToast();
 
   // CPF form
@@ -116,6 +121,8 @@ export default function PatientForm({ companySlug, companyName }: PatientFormPro
       phone: '',
       cpf: '',
       street: '',
+      number: '',
+      complement: '',
       zipCode: '',
       city: '',
       state: '',
@@ -168,18 +175,33 @@ export default function PatientForm({ companySlug, companyName }: PatientFormPro
         '0'
       )}-${data.birthDay.padStart(2, '0')}`;
 
-      // Create a copy of the data with the birthDate field
+      // Create a copy of the data with the birthDate field, excluding separate date and address fields
+      const {
+        birthDay,
+        birthMonth,
+        birthYear,
+        street,
+        number,
+        complement,
+        ...patientDataWithoutDateFields
+      } = data;
+
+      // Concatenate address fields
+      let fullAddress = street;
+      if (number) {
+        fullAddress += `, ${number}`;
+      }
+      if (complement && complement.trim()) {
+        fullAddress += `, ${complement}`;
+      }
+
       const patientData = {
-        ...data,
+        ...patientDataWithoutDateFields,
+        street: fullAddress,
         birthDate: birthDateString,
         // Normalize phone by removing non-digits
         phone: data.phone.replace(/\D/g, ''),
       };
-
-      // Remove the separate date fields before sending to the API
-      delete patientData.birthDay;
-      delete patientData.birthMonth;
-      delete patientData.birthYear;
 
       // Registrar paciente no banco de dados
       await registerPatient(patientData, companySlug);
@@ -228,12 +250,46 @@ export default function PatientForm({ companySlug, companyName }: PatientFormPro
     }
   };
 
-  // Format CEP as user types
-  const formatCEP = (e: React.ChangeEvent<HTMLInputElement>) => {
-    let value = e.target.value.replace(/\D/g, '');
-    if (value.length <= 8) {
-      value = value.replace(/(\d{5})(\d{3})/, '$1-$2');
-      patientForm.setValue('zipCode', value);
+  // Format CEP as user types and fetch address when complete
+  const handleCEPChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value.replace(/\D/g, '');
+    let formattedValue = rawValue;
+
+    if (rawValue.length <= 8) {
+      formattedValue = formatCEP(rawValue);
+      patientForm.setValue('zipCode', formattedValue);
+
+      // If CEP is complete (8 digits), fetch address
+      if (rawValue.length === 8) {
+        setIsCEPLoading(true);
+        try {
+          const addressData = await fetchAddressByCEP(rawValue);
+          if (addressData && !addressData.error) {
+            // Auto-fill address fields
+            patientForm.setValue('street', addressData.street);
+            patientForm.setValue('city', addressData.city);
+            patientForm.setValue('state', addressData.state);
+
+            toast({
+              title: 'Endereço encontrado',
+              description: `${addressData.city}, ${addressData.state}`,
+            });
+          } else {
+            throw new Error(addressData?.error || 'CEP não encontrado');
+          }
+        } catch (error) {
+          toast({
+            title: 'Erro ao buscar CEP',
+            description:
+              error instanceof Error
+                ? error.message
+                : 'Não foi possível encontrar o endereço. Preencha manualmente.',
+            variant: 'destructive',
+          });
+        } finally {
+          setIsCEPLoading(false);
+        }
+      }
     }
   };
 
@@ -388,13 +444,47 @@ export default function PatientForm({ companySlug, companyName }: PatientFormPro
 
                   <FormField
                     control={patientForm.control}
+                    name="zipCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CEP</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              placeholder="00000-000"
+                              {...field}
+                              onChange={e => {
+                                field.onChange(e);
+                                handleCEPChange(e);
+                              }}
+                              disabled={isCEPLoading}
+                            />
+                            {isCEPLoading && (
+                              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                                <div className="animate-spin h-4 w-4 border-2 border-blue-600 rounded-full border-t-transparent"></div>
+                              </div>
+                            )}
+                          </div>
+                        </FormControl>
+                        <FormMessage />
+                        {isCEPLoading && (
+                          <p className="text-xs text-blue-600">
+                            Buscando endereço...
+                          </p>
+                        )}
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={patientForm.control}
                     name="street"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>Rua/Avenida</FormLabel>
                         <FormControl>
                           <Input
-                            placeholder="Rua/Avenida, número, complemento"
+                            placeholder="Nome da rua ou avenida"
                             {...field}
                           />
                         </FormControl>
@@ -403,26 +493,38 @@ export default function PatientForm({ companySlug, companyName }: PatientFormPro
                     )}
                   />
 
-                  <FormField
-                    control={patientForm.control}
-                    name="zipCode"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>CEP</FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="00000-000"
-                            {...field}
-                            onChange={e => {
-                              field.onChange(e);
-                              formatCEP(e);
-                            }}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={patientForm.control}
+                      name="number"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Número</FormLabel>
+                          <FormControl>
+                            <Input placeholder="123" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={patientForm.control}
+                      name="complement"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Complemento</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Apto 45, Bloco B (opcional)"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <FormField
@@ -448,7 +550,7 @@ export default function PatientForm({ companySlug, companyName }: PatientFormPro
                           <FormControl>
                             <Select
                               onValueChange={field.onChange}
-                              defaultValue={field.value}
+                              value={field.value}
                             >
                               <SelectTrigger>
                                 <SelectValue placeholder="UF" />
@@ -541,7 +643,7 @@ export default function PatientForm({ companySlug, companyName }: PatientFormPro
                         <FormLabel>Dia</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -571,7 +673,7 @@ export default function PatientForm({ companySlug, companyName }: PatientFormPro
                         <FormLabel>Mês</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>
@@ -606,7 +708,7 @@ export default function PatientForm({ companySlug, companyName }: PatientFormPro
                         <FormLabel>Ano</FormLabel>
                         <Select
                           onValueChange={field.onChange}
-                          defaultValue={field.value}
+                          value={field.value}
                         >
                           <FormControl>
                             <SelectTrigger>

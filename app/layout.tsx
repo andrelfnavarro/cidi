@@ -6,9 +6,8 @@ import { ThemeProvider } from '@/components/theme-provider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
-  title: 'C.I.D.I - Centro Integrado de Implantes',
+  title: 'Zahn',
   description: 'Sistema de cadastro de pacientes',
-  generator: 'v0.dev',
 };
 
 export default function RootLayout({

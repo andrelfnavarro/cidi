@@ -1,8 +1,23 @@
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { CheckIcon, UsersIcon, FileTextIcon, CreditCardIcon, ShieldCheckIcon, ClockIcon, StarIcon } from 'lucide-react';
+import {
+  CheckIcon,
+  UsersIcon,
+  FileTextIcon,
+  CreditCardIcon,
+  ShieldCheckIcon,
+  ClockIcon,
+  StarIcon,
+} from 'lucide-react';
+import Link from 'next/link';
 
 export default function Home() {
   return (
@@ -28,7 +43,7 @@ export default function Home() {
                 <a href="/admin">Login</a>
               </Button>
               <Button asChild>
-                <a href="#comecar">Começar</a>
+                <Link href="/subscription">Começar</Link>
               </Button>
             </div>
           </div>
@@ -44,14 +59,19 @@ export default function Home() {
             </Badge>
           </div>
           <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 max-w-4xl mx-auto">
-            Gestão Completa para Sua <span className="text-blue-600">Clínica Odontológica</span>
+            Gestão Completa para Sua{' '}
+            <span className="text-blue-600">Clínica Odontológica</span>
           </h1>
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Gerenciamento profissional de pacientes, planejamento de tratamentos e ferramentas de crescimento para clínicas odontológicas modernas
+            Gerenciamento profissional de pacientes, planejamento de tratamentos
+            e ferramentas de crescimento para clínicas odontológicas modernas
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3">
-              Começar Agora
+            <Button
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3"
+            >
+              <Link href="/subscription">Começar Agora</Link>
             </Button>
             <Button size="lg" variant="outline" className="px-8 py-3">
               Ver Demonstração
@@ -74,29 +94,43 @@ export default function Home() {
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <FileTextIcon className="w-6 h-6 text-red-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Prontuários Manuais</h3>
-              <p className="text-sm text-gray-600">Fichas em papel e planilhas desorganizadas</p>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Prontuários Manuais
+              </h3>
+              <p className="text-sm text-gray-600">
+                Fichas em papel e planilhas desorganizadas
+              </p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <ClockIcon className="w-6 h-6 text-red-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Tempo Perdido</h3>
-              <p className="text-sm text-gray-600">Busca demorada por informações dos pacientes</p>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Tempo Perdido
+              </h3>
+              <p className="text-sm text-gray-600">
+                Busca demorada por informações dos pacientes
+              </p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <CreditCardIcon className="w-6 h-6 text-red-600" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Controle Financeiro</h3>
-              <p className="text-sm text-gray-600">Dificuldades no controle de pagamentos</p>
+              <h3 className="font-semibold text-gray-900 mb-2">
+                Controle Financeiro
+              </h3>
+              <p className="text-sm text-gray-600">
+                Dificuldades no controle de pagamentos
+              </p>
             </div>
             <div className="text-center">
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <UsersIcon className="w-6 h-6 text-red-600" />
               </div>
               <h3 className="font-semibold text-gray-900 mb-2">Coordenação</h3>
-              <p className="text-sm text-gray-600">Falta de integração entre dentistas</p>
+              <p className="text-sm text-gray-600">
+                Falta de integração entre dentistas
+              </p>
             </div>
           </div>
         </div>
@@ -110,7 +144,8 @@ export default function Home() {
               Tudo que sua clínica precisa em um só lugar
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Sistema completo desenvolvido especialmente para o mercado brasileiro
+              Sistema completo desenvolvido especialmente para o mercado
+              brasileiro
             </p>
           </div>
 
@@ -121,28 +156,39 @@ export default function Home() {
                 <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-4">
                   <UsersIcon className="w-6 h-6 text-blue-600" />
                 </div>
-                <CardTitle className="text-xl">Gestão Completa de Pacientes</CardTitle>
+                <CardTitle className="text-xl">
+                  Gestão Completa de Pacientes
+                </CardTitle>
                 <CardDescription>
-                  Cadastro, busca e acompanhamento de pacientes com validação de CPF
+                  Cadastro, busca e acompanhamento de pacientes com validação de
+                  CPF
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-2">
                   <li className="flex items-center">
                     <CheckIcon className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm">Cadastro instantâneo com validação de CPF</span>
+                    <span className="text-sm">
+                      Cadastro instantâneo com validação de CPF
+                    </span>
                   </li>
                   <li className="flex items-center">
                     <CheckIcon className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm">Busca avançada por nome, CPF ou telefone</span>
+                    <span className="text-sm">
+                      Busca avançada por nome, CPF ou telefone
+                    </span>
                   </li>
                   <li className="flex items-center">
                     <CheckIcon className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm">Histórico médico e odontológico completo</span>
+                    <span className="text-sm">
+                      Histórico médico e odontológico completo
+                    </span>
                   </li>
                   <li className="flex items-center">
                     <CheckIcon className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm">Gerenciamento de convênios e planos</span>
+                    <span className="text-sm">
+                      Gerenciamento de convênios e planos
+                    </span>
                   </li>
                 </ul>
               </CardContent>
@@ -154,7 +200,9 @@ export default function Home() {
                 <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
                   <FileTextIcon className="w-6 h-6 text-green-600" />
                 </div>
-                <CardTitle className="text-xl">Planejamento de Tratamentos</CardTitle>
+                <CardTitle className="text-xl">
+                  Planejamento de Tratamentos
+                </CardTitle>
                 <CardDescription>
                   Documentação profissional e planejamento detalhado por dente
                 </CardDescription>
@@ -163,19 +211,27 @@ export default function Home() {
                 <ul className="space-y-2">
                   <li className="flex items-center">
                     <CheckIcon className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm">Anamnese detalhada com 35+ perguntas</span>
+                    <span className="text-sm">
+                      Anamnese detalhada com 35+ perguntas
+                    </span>
                   </li>
                   <li className="flex items-center">
                     <CheckIcon className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm">Planejamento específico por dente</span>
+                    <span className="text-sm">
+                      Planejamento específico por dente
+                    </span>
                   </li>
                   <li className="flex items-center">
                     <CheckIcon className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm">Precificação automática de procedimentos</span>
+                    <span className="text-sm">
+                      Precificação automática de procedimentos
+                    </span>
                   </li>
                   <li className="flex items-center">
                     <CheckIcon className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm">Upload seguro de arquivos e imagens</span>
+                    <span className="text-sm">
+                      Upload seguro de arquivos e imagens
+                    </span>
                   </li>
                 </ul>
               </CardContent>
@@ -187,7 +243,9 @@ export default function Home() {
                 <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-4">
                   <ShieldCheckIcon className="w-6 h-6 text-purple-600" />
                 </div>
-                <CardTitle className="text-xl">Multi-Clínica e Segurança</CardTitle>
+                <CardTitle className="text-xl">
+                  Multi-Clínica e Segurança
+                </CardTitle>
                 <CardDescription>
                   Arquitetura segura para clínicas de todos os tamanhos
                 </CardDescription>
@@ -196,19 +254,27 @@ export default function Home() {
                 <ul className="space-y-2">
                   <li className="flex items-center">
                     <CheckIcon className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm">Identidade visual personalizada</span>
+                    <span className="text-sm">
+                      Identidade visual personalizada
+                    </span>
                   </li>
                   <li className="flex items-center">
                     <CheckIcon className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm">Colaboração entre múltiplos dentistas</span>
+                    <span className="text-sm">
+                      Colaboração entre múltiplos dentistas
+                    </span>
                   </li>
                   <li className="flex items-center">
                     <CheckIcon className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm">Isolamento seguro de dados (LGPD)</span>
+                    <span className="text-sm">
+                      Isolamento seguro de dados (LGPD)
+                    </span>
                   </li>
                   <li className="flex items-center">
                     <CheckIcon className="w-4 h-4 text-green-600 mr-2 flex-shrink-0" />
-                    <span className="text-sm">Formulários profissionais para pacientes</span>
+                    <span className="text-sm">
+                      Formulários profissionais para pacientes
+                    </span>
                   </li>
                 </ul>
               </CardContent>
@@ -227,7 +293,9 @@ export default function Home() {
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <div className="text-2xl mb-2">💰</div>
                 <div className="text-sm font-medium">Orçamentos</div>
-                <div className="text-xs text-gray-500">Planejamento financeiro</div>
+                <div className="text-xs text-gray-500">
+                  Planejamento financeiro
+                </div>
               </div>
               <div className="bg-white rounded-lg p-4 shadow-sm">
                 <div className="text-2xl mb-2">📊</div>
@@ -257,7 +325,8 @@ export default function Home() {
               Por que escolher o Zahn?
             </h2>
             <p className="text-xl text-blue-100 max-w-2xl mx-auto">
-              Desenvolvido por especialistas para profissionais da odontologia brasileira
+              Desenvolvido por especialistas para profissionais da odontologia
+              brasileira
             </p>
           </div>
 
@@ -284,7 +353,9 @@ export default function Home() {
               <div className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
                 <StarIcon className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">Experiência Profissional</h3>
+              <h3 className="text-xl font-semibold mb-2">
+                Experiência Profissional
+              </h3>
               <p className="text-blue-100">
                 Interface moderna que impressiona seus pacientes
               </p>
@@ -313,8 +384,10 @@ export default function Home() {
               <CardHeader className="text-center">
                 <CardTitle className="text-2xl">Zahn Profissional</CardTitle>
                 <CardDescription>Tudo que sua clínica precisa</CardDescription>
-                <div className="text-4xl font-bold text-gray-900 mt-4">R$ 97</div>
-                <div className="text-sm text-gray-500">por dentista/mês</div>
+                <div className="mt-4">
+                  <span className="text-4xl font-bold text-gray-900">R$ 97</span>
+                  <span className="text-lg text-gray-500 ml-1">/mês</span>
+                </div>
               </CardHeader>
               <CardContent>
                 <ul className="space-y-3 mb-6">
@@ -355,7 +428,8 @@ export default function Home() {
 
           <div className="text-center mt-12">
             <p className="text-gray-600 mb-4">
-              ✓ Sem taxas de setup • ✓ Cancele quando quiser • ✓ Dados sempre seus
+              ✓ Sem taxas de setup • ✓ Cancele quando quiser • ✓ Dados sempre
+              seus
             </p>
           </div>
         </div>
@@ -378,7 +452,9 @@ export default function Home() {
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-blue-600">1</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Crie sua conta</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Crie sua conta
+              </h3>
               <p className="text-gray-600">
                 Configure sua clínica com identidade visual personalizada
               </p>
@@ -387,7 +463,9 @@ export default function Home() {
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-blue-600">2</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Adicione sua equipe</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Adicione sua equipe
+              </h3>
               <p className="text-gray-600">
                 Convide dentistas e configure permissões de acesso
               </p>
@@ -396,7 +474,9 @@ export default function Home() {
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-blue-600">3</span>
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Comece a atender</h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Comece a atender
+              </h3>
               <p className="text-gray-600">
                 Cadastre pacientes e gerencie tratamentos
               </p>
@@ -404,7 +484,10 @@ export default function Home() {
           </div>
 
           <div className="text-center">
-            <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 text-lg">
+            <Button
+              size="lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 text-lg"
+            >
               Começar Agora
             </Button>
             <p className="text-sm text-gray-500 mt-4">
@@ -435,28 +518,76 @@ export default function Home() {
             <div>
               <h3 className="font-semibold mb-4">Produto</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#recursos" className="hover:text-white">Recursos</a></li>
-                <li><a href="#precos" className="hover:text-white">Preços</a></li>
-                <li><a href="#" className="hover:text-white">Demonstração</a></li>
-                <li><a href="#" className="hover:text-white">Segurança</a></li>
+                <li>
+                  <a href="#recursos" className="hover:text-white">
+                    Recursos
+                  </a>
+                </li>
+                <li>
+                  <a href="#precos" className="hover:text-white">
+                    Preços
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Demonstração
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Segurança
+                  </a>
+                </li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Suporte</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Central de Ajuda</a></li>
-                <li><a href="#" className="hover:text-white">Documentação</a></li>
-                <li><a href="#" className="hover:text-white">Contato</a></li>
-                <li><a href="#" className="hover:text-white">WhatsApp</a></li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Central de Ajuda
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Documentação
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Contato
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    WhatsApp
+                  </a>
+                </li>
               </ul>
             </div>
             <div>
               <h3 className="font-semibold mb-4">Legal</h3>
               <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Termos de Uso</a></li>
-                <li><a href="#" className="hover:text-white">Política de Privacidade</a></li>
-                <li><a href="#" className="hover:text-white">LGPD</a></li>
-                <li><a href="#" className="hover:text-white">Cookies</a></li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Termos de Uso
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Política de Privacidade
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    LGPD
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="hover:text-white">
+                    Cookies
+                  </a>
+                </li>
               </ul>
             </div>
           </div>
@@ -466,10 +597,16 @@ export default function Home() {
               Desenvolvido com ❤️ para dentistas brasileiros
             </p>
             <div className="flex space-x-4 mt-4 md:mt-0">
-              <Badge variant="outline" className="text-gray-400 border-gray-700">
+              <Badge
+                variant="outline"
+                className="text-gray-400 border-gray-700"
+              >
                 🔒 LGPD Compliant
               </Badge>
-              <Badge variant="outline" className="text-gray-400 border-gray-700">
+              <Badge
+                variant="outline"
+                className="text-gray-400 border-gray-700"
+              >
                 🛡️ Dados Seguros
               </Badge>
             </div>

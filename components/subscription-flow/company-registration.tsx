@@ -90,16 +90,16 @@ export default function CompanyRegistration({
   };
 
   return (
-    <div className="max-w-md mx-auto p-6">
+    <div className="max-w-md mx-auto p-4 sm:p-6">
       <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Informações da empresa</CardTitle>
-          <CardDescription>Configure os dados da sua clínica</CardDescription>
+        <CardHeader className="text-center pb-4 sm:pb-6">
+          <CardTitle className="text-xl sm:text-2xl">Informações da empresa</CardTitle>
+          <CardDescription className="text-sm sm:text-base">Configure os dados da sua clínica</CardDescription>
         </CardHeader>
 
-        <CardContent>
+        <CardContent className="pt-0 sm:pt-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -126,17 +126,17 @@ export default function CompanyRegistration({
                     <FormLabel>URL personalizada</FormLabel>
                     <FormControl>
                       <div className="flex">
-                        <span className="inline-flex items-center px-3 text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md">
+                        <span className="inline-flex items-center px-2 sm:px-3 text-xs sm:text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md whitespace-nowrap">
                           zahn.work/
                         </span>
                         <Input
                           placeholder="clinica-exemplo"
-                          className="rounded-l-none"
+                          className="rounded-l-none text-sm sm:text-base"
                           {...field}
                         />
                       </div>
                     </FormControl>
-                    <FormDescription>
+                    <FormDescription className="text-xs sm:text-sm">
                       Esta será a URL onde seus pacientes acessarão o formulário
                     </FormDescription>
                     <FormMessage />
@@ -156,7 +156,7 @@ export default function CompanyRegistration({
                         {...field}
                       />
                     </FormControl>
-                    <FormDescription>
+                    <FormDescription className="text-xs sm:text-sm">
                       Nome alternativo para exibir aos pacientes
                     </FormDescription>
                     <FormMessage />
@@ -173,7 +173,7 @@ export default function CompanyRegistration({
                     <FormControl>
                       <Input placeholder="Cuidando do seu sorriso" {...field} />
                     </FormControl>
-                    <FormDescription>
+                    <FormDescription className="text-xs sm:text-sm">
                       Slogan ou tagline da sua clínica
                     </FormDescription>
                     <FormMessage />
@@ -181,7 +181,7 @@ export default function CompanyRegistration({
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full py-3 text-sm sm:text-base mt-6" disabled={isLoading}>
                 {isLoading ? 'Criando empresa...' : 'Continuar'}
               </Button>
             </form>

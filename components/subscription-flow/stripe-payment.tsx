@@ -88,20 +88,20 @@ export default function StripePayment({ subscriptionData, onPaymentComplete }: S
   };
 
   return (
-    <div className="max-w-md mx-auto p-6">
+    <div className="max-w-md mx-auto p-4 sm:p-6">
       <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Pagamento</CardTitle>
-          <CardDescription>
+        <CardHeader className="text-center pb-4 sm:pb-6">
+          <CardTitle className="text-xl sm:text-2xl">Pagamento</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
             Finalize sua assinatura
           </CardDescription>
         </CardHeader>
         
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 sm:space-y-6 pt-0 sm:pt-6">
           {/* Order Summary */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="font-medium mb-3">Resumo do pedido</h3>
-            <div className="space-y-2 text-sm">
+          <div className="bg-gray-50 p-3 sm:p-4 rounded-lg">
+            <h3 className="font-medium mb-2 sm:mb-3 text-sm sm:text-base">Resumo do pedido</h3>
+            <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
               <div className="flex justify-between">
                 <span>Plano:</span>
                 <span>{subscriptionData.selectedPlan?.name}</span>
@@ -122,9 +122,9 @@ export default function StripePayment({ subscriptionData, onPaymentComplete }: S
           </div>
 
           {/* Account Summary */}
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="font-medium mb-2">Conta administradora</h3>
-            <div className="space-y-1 text-sm">
+          <div className="bg-blue-50 p-3 sm:p-4 rounded-lg">
+            <h3 className="font-medium mb-2 text-sm sm:text-base">Conta administradora</h3>
+            <div className="space-y-1 text-xs sm:text-sm">
               <div><strong>Nome:</strong> {subscriptionData.accountData?.name}</div>
               <div><strong>Email:</strong> {subscriptionData.accountData?.email}</div>
             </div>
@@ -139,7 +139,7 @@ export default function StripePayment({ subscriptionData, onPaymentComplete }: S
           <div className="space-y-3">
             <Button 
               onClick={handlePayment}
-              className="w-full"
+              className="w-full py-3 text-sm sm:text-base"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -152,7 +152,7 @@ export default function StripePayment({ subscriptionData, onPaymentComplete }: S
               )}
             </Button>
             
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-gray-500 text-center px-2">
               Ao prosseguir, você será redirecionado para o Stripe para finalizar o pagamento de forma segura.
             </p>
           </div>

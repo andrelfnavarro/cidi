@@ -32,7 +32,8 @@ export default function Home() {
               </div>
               <span className="text-xl font-bold text-gray-900">Zahn</span>
             </div>
-            <div className="flex items-center space-x-4">
+            {/* Desktop Navigation */}
+            <div className="hidden lg:flex items-center space-x-4">
               <Button variant="ghost" asChild>
                 <a href="#recursos">Recursos</a>
               </Button>
@@ -46,50 +47,73 @@ export default function Home() {
                 <Link href="/subscription">Começar</Link>
               </Button>
             </div>
+            
+            {/* Mobile Navigation */}
+            <div className="lg:hidden flex items-center space-x-2">
+              <Button variant="outline" size="sm" asChild>
+                <a href="/admin">Login</a>
+              </Button>
+              <Button size="sm" asChild>
+                <Link href="/subscription">Começar</Link>
+              </Button>
+            </div>
+          </div>
+          
+          {/* Mobile Menu Links */}
+          <div className="lg:hidden mt-4 pt-4 border-t border-gray-100">
+            <div className="flex justify-center space-x-6">
+              <Button variant="ghost" size="sm" asChild>
+                <a href="#recursos">Recursos</a>
+              </Button>
+              <Button variant="ghost" size="sm" asChild>
+                <a href="#precos">Preços</a>
+              </Button>
+            </div>
           </div>
         </div>
       </nav>
 
       {/* Hero Section */}
-      <section className="py-20 bg-gradient-to-b from-blue-50 to-white">
+      <section className="py-12 sm:py-16 lg:py-20 bg-gradient-to-b from-blue-50 to-white">
         <div className="container mx-auto px-4 text-center">
-          <div className="flex justify-center mb-6">
-            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200">
+          <div className="flex justify-center mb-4 sm:mb-6">
+            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 text-xs sm:text-sm">
               Plataforma completa para clínicas odontológicas
             </Badge>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6 max-w-4xl mx-auto">
+          <h1 className="text-3xl sm:text-4xl lg:text-6xl font-bold text-gray-900 mb-4 sm:mb-6 max-w-4xl mx-auto leading-tight">
             Gestão Completa para Sua{' '}
             <span className="text-blue-600">Clínica Odontológica</span>
           </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
+          <p className="text-lg sm:text-xl text-gray-600 mb-6 sm:mb-8 max-w-2xl mx-auto leading-relaxed">
             Gerenciamento profissional de pacientes, planejamento de tratamentos
             e ferramentas de crescimento para clínicas odontológicas modernas
           </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center max-w-md sm:max-w-none mx-auto">
             <Button
               size="lg"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-3 w-full sm:w-auto"
+              asChild
             >
               <Link href="/subscription">Começar Agora</Link>
             </Button>
-            <Button size="lg" variant="outline" className="px-8 py-3">
+            <Button size="lg" variant="outline" className="px-6 sm:px-8 py-3 w-full sm:w-auto">
               Ver Demonstração
             </Button>
           </div>
-          <p className="text-sm text-gray-500 mt-4">
+          <p className="text-xs sm:text-sm text-gray-500 mt-4 px-4">
             ✓ Setup em minutos • ✓ Suporte em português • ✓ Dados seguros
           </p>
         </div>
       </section>
 
       {/* Problem Statement */}
-      <section className="py-16 bg-gray-50">
+      <section className="py-12 sm:py-16 bg-gray-50">
         <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-12">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-8 sm:mb-12">
             Pare de perder tempo com processos manuais
           </h2>
-          <div className="grid md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 sm:gap-8 max-w-4xl mx-auto">
             <div className="text-center">
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-4">
                 <FileTextIcon className="w-6 h-6 text-red-600" />
@@ -137,19 +161,19 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section id="recursos" className="py-20">
+      <section id="recursos" className="py-12 sm:py-16 lg:py-20 scroll-mt-32">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
               Tudo que sua clínica precisa em um só lugar
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
               Sistema completo desenvolvido especialmente para o mercado
               brasileiro
             </p>
           </div>
 
-          <div className="grid lg:grid-cols-3 gap-8 mb-16">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 mb-12 sm:mb-16">
             {/* Feature 1: Patient Management */}
             <Card className="border-0 shadow-lg">
               <CardHeader>
@@ -365,18 +389,18 @@ export default function Home() {
       </section>
 
       {/* Pricing Section */}
-      <section id="precos" className="py-20">
+      <section id="precos" className="py-12 sm:py-16 lg:py-20 scroll-mt-32">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
               Um plano simples e completo
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
               Todos os recursos que sua clínica precisa por um preço justo
             </p>
           </div>
 
-          <div className="max-w-md mx-auto">
+          <div className="max-w-sm sm:max-w-md mx-auto">
             <Card className="border-2 border-blue-600 relative">
               <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-blue-600 text-white">Plano Único</Badge>
@@ -436,18 +460,18 @@ export default function Home() {
       </section>
 
       {/* Getting Started Section */}
-      <section id="comecar" className="py-20 bg-gray-50">
+      <section id="comecar" className="py-12 sm:py-16 lg:py-20 bg-gray-50 scroll-mt-32">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-12 sm:mb-16">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
               Comece em 3 passos simples
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto">
               Configure sua clínica e comece a atender em minutos
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto mb-12">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 max-w-4xl mx-auto mb-8 sm:mb-12">
             <div className="text-center">
               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-blue-600">1</span>
@@ -486,11 +510,12 @@ export default function Home() {
           <div className="text-center">
             <Button
               size="lg"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-12 py-4 text-lg"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 sm:px-12 py-4 text-base sm:text-lg w-full sm:w-auto max-w-xs sm:max-w-none mx-auto"
+              asChild
             >
-              Começar Agora
+              <Link href="/subscription">Começar Agora</Link>
             </Button>
-            <p className="text-sm text-gray-500 mt-4">
+            <p className="text-xs sm:text-sm text-gray-500 mt-4">
               Configure sua clínica e comece a atender hoje mesmo
             </p>
           </div>

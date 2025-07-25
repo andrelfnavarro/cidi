@@ -64,26 +64,26 @@ export default function SubscriptionSelection({
   };
 
   return (
-    <div className="max-w-2xl mx-auto p-6">
-      <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold mb-4">Configure sua assinatura</h1>
-        <p className="text-gray-600 mb-6">
+    <div className="max-w-2xl mx-auto p-4 sm:p-6">
+      <div className="text-center mb-6 sm:mb-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Configure sua assinatura</h1>
+        <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 px-2">
           Personalize o plano para sua clínica
         </p>
       </div>
 
-      <Card className="mb-6">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">{SUBSCRIPTION_PLAN.name}</CardTitle>
-          <CardDescription>{SUBSCRIPTION_PLAN.description}</CardDescription>
+      <Card className="mb-4 sm:mb-6">
+        <CardHeader className="text-center pb-4 sm:pb-6">
+          <CardTitle className="text-xl sm:text-2xl">{SUBSCRIPTION_PLAN.name}</CardTitle>
+          <CardDescription className="text-sm sm:text-base">{SUBSCRIPTION_PLAN.description}</CardDescription>
         </CardHeader>
 
-        <CardContent>
-          <ul className="space-y-3 mb-6">
+        <CardContent className="pt-0">
+          <ul className="space-y-2 sm:space-y-3 mb-4 sm:mb-6">
             {SUBSCRIPTION_PLAN.features.map((feature, index) => (
               <li key={index} className="flex items-center">
-                <Check className="h-4 w-4 text-green-500 mr-3 flex-shrink-0" />
-                <span>{feature}</span>
+                <Check className="h-4 w-4 text-green-500 mr-2 sm:mr-3 flex-shrink-0" />
+                <span className="text-sm sm:text-base">{feature}</span>
               </li>
             ))}
           </ul>
@@ -92,18 +92,18 @@ export default function SubscriptionSelection({
 
 
       <Card>
-        <CardContent className="pt-6">
-          <div className="text-center mb-6">
-            <div className="text-2xl font-bold text-blue-600 mb-2">
+        <CardContent className="pt-4 sm:pt-6">
+          <div className="text-center mb-4 sm:mb-6">
+            <div className="text-xl sm:text-2xl font-bold text-blue-600 mb-2">
               {formatPrice(totalPrice)}/mês
             </div>
-            <div className="text-sm text-gray-600">
+            <div className="text-xs sm:text-sm text-gray-600">
               Plano fixo - dentistas ilimitados
             </div>
           </div>
 
           <Button
-            className="w-full"
+            className="w-full py-3 text-sm sm:text-base"
             onClick={() => onPlanSelect(SUBSCRIPTION_PLAN, 1)} // Always 1 for flat rate
           >
             Continuar com este plano

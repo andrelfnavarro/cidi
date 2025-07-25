@@ -79,8 +79,8 @@ export default function SubscriptionSuccessPage() {
 
   if (isProcessing) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="max-w-md mx-auto">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-md mx-auto w-full">
           <CardContent className="pt-6 text-center">
             <Loader2 className="h-12 w-12 animate-spin mx-auto mb-4 text-blue-500" />
             <h2 className="text-xl font-semibold mb-2">
@@ -97,8 +97,8 @@ export default function SubscriptionSuccessPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <Card className="max-w-md mx-auto">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <Card className="max-w-md mx-auto w-full">
           <CardHeader className="text-center">
             <CardTitle className="text-red-600">Erro na Assinatura</CardTitle>
             <CardDescription>
@@ -129,8 +129,8 @@ export default function SubscriptionSuccessPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <Card className="max-w-md mx-auto">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <Card className="max-w-md mx-auto w-full">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4">
             <CheckCircle className="h-16 w-16 text-green-500" />
@@ -141,11 +141,11 @@ export default function SubscriptionSuccessPage() {
           <CardDescription>Sua conta foi criada com sucesso</CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-6">
+        <CardContent className="space-y-4 sm:space-y-6">
           {subscriptionData && (
-            <div className="bg-gray-50 p-4 rounded-lg space-y-3">
-              <h3 className="font-medium">Detalhes da conta:</h3>
-              <div className="space-y-2 text-sm">
+            <div className="bg-gray-50 p-3 sm:p-4 rounded-lg space-y-2 sm:space-y-3">
+              <h3 className="font-medium text-sm sm:text-base">Detalhes da conta:</h3>
+              <div className="space-y-1 sm:space-y-2 text-xs sm:text-sm">
                 <div>
                   <strong>Email:</strong> {subscriptionData.user?.email}
                 </div>
@@ -169,11 +169,11 @@ export default function SubscriptionSuccessPage() {
           )}
 
           <div className="space-y-3">
-            <Button onClick={handleContinue} className="w-full">
+            <Button onClick={handleContinue} className="w-full py-3 text-sm sm:text-base">
               Acessar Portal do Dentista
             </Button>
 
-            <p className="text-xs text-gray-500 text-center">
+            <p className="text-xs text-gray-500 text-center px-2">
               Você será redirecionado para fazer login com suas credenciais
             </p>
           </div>

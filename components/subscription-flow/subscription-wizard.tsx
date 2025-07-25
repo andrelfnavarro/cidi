@@ -83,32 +83,45 @@ export default function SubscriptionWizard({ onComplete }: SubscriptionWizardPro
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white shadow-sm">
-          <div className="px-6 py-4">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <div className="bg-white shadow-sm rounded-none sm:rounded-lg">
+          <div className="px-4 sm:px-6 py-4">
             <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-4">
+              <div className="flex items-center space-x-2 sm:space-x-4 min-w-0">
                 {canGoBack && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={handleBack}
-                    className="p-2"
+                    className="p-2 flex-shrink-0"
                   >
                     <ArrowLeft className="h-4 w-4" />
                   </Button>
                 )}
-                <h1 className="text-2xl font-bold">Assinatura Zahn</h1>
+                <h1 className="text-lg sm:text-2xl font-bold truncate">Assinatura Zahn</h1>
               </div>
               
-              <div className="text-sm text-gray-500">
-                Passo {currentStepIndex + 1} de {STEPS.length}
+              <div className="text-xs sm:text-sm text-gray-500 flex-shrink-0">
+                {currentStepIndex + 1}/{STEPS.length}
               </div>
             </div>
             
             <Progress value={progress} className="mb-4" />
             
-            <div className="flex items-center space-x-4">
+            {/* Mobile Step Indicator */}
+            <div className="md:hidden mb-4">
+              <div className="text-center">
+                <div className="text-sm font-medium text-blue-600">
+                  {STEPS[currentStepIndex].title}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {STEPS[currentStepIndex].description}
+                </div>
+              </div>
+            </div>
+            
+            {/* Desktop Step Indicator */}
+            <div className="hidden md:flex items-center space-x-4">
               {STEPS.map((step, index) => {
                 const isCompleted = index < currentStepIndex;
                 const isCurrent = step.key === currentStep;
@@ -152,7 +165,7 @@ export default function SubscriptionWizard({ onComplete }: SubscriptionWizardPro
           </div>
         </div>
 
-        <div className="py-8">
+        <div className="py-4 sm:py-8 px-4 sm:px-0">
           {currentStep === 'plan' && (
             <SubscriptionSelection
               onPlanSelect={handlePlanSelect}

@@ -67,18 +67,18 @@ export default function AccountRegistration({ onAccountCreate, initialData, isLo
   };
 
   return (
-    <div className="max-w-md mx-auto p-6">
+    <div className="max-w-md mx-auto p-4 sm:p-6">
       <Card>
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl">Criar conta</CardTitle>
-          <CardDescription>
+        <CardHeader className="text-center pb-4 sm:pb-6">
+          <CardTitle className="text-xl sm:text-2xl">Criar conta</CardTitle>
+          <CardDescription className="text-sm sm:text-base">
             Crie sua conta para acessar a plataforma Zahn
           </CardDescription>
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="pt-0 sm:pt-6">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-3 sm:space-y-4">
               <FormField
                 control={form.control}
                 name="name"
@@ -177,7 +177,7 @@ export default function AccountRegistration({ onAccountCreate, initialData, isLo
                 )}
               />
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
+              <Button type="submit" className="w-full py-3 text-sm sm:text-base mt-6" disabled={isLoading}>
                 {isLoading ? 'Criando conta...' : 'Criar conta'}
               </Button>
             </form>

@@ -440,8 +440,8 @@ export default function Home() {
                     <span className="text-sm">Setup rápido e fácil</span>
                   </li>
                 </ul>
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-lg py-3">
-                  Começar Agora
+                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-lg py-3" asChild>
+                  <Link href="/subscription">Começar Agora</Link>
                 </Button>
                 <p className="text-xs text-gray-500 text-center mt-3">
                   Comece a usar imediatamente

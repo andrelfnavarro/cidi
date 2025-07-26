@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Check, Minus, Plus } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { SubscriptionPlan } from '@/utils/types/Subscription';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,8 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 
 interface SubscriptionSelectionProps {
   onPlanSelect: (plan: SubscriptionPlan, dentistCount: number) => void;
@@ -26,7 +24,7 @@ const SUBSCRIPTION_PLAN: SubscriptionPlan = {
   description: 'Tudo que sua clínica precisa',
   price_per_dentist: 97, // Will be flat rate, ignore dentist count
   currency: 'BRL',
-  stripe_price_id: 'price_1Rmo9SQLzoOPtu2gNrvqQG5S', // TODO: Update for flat rate pricing
+  stripe_price_id: process.env.NEXT_PUBLIC_STRIPE_PRICE_ID,
   features: [
     'Pacientes ilimitados',
     'Dentistas ilimitados',
@@ -66,7 +64,9 @@ export default function SubscriptionSelection({
   return (
     <div className="max-w-2xl mx-auto p-4 sm:p-6">
       <div className="text-center mb-6 sm:mb-8">
-        <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">Configure sua assinatura</h1>
+        <h1 className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
+          Configure sua assinatura
+        </h1>
         <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 px-2">
           Personalize o plano para sua clínica
         </p>
@@ -74,8 +74,12 @@ export default function SubscriptionSelection({
 
       <Card className="mb-4 sm:mb-6">
         <CardHeader className="text-center pb-4 sm:pb-6">
-          <CardTitle className="text-xl sm:text-2xl">{SUBSCRIPTION_PLAN.name}</CardTitle>
-          <CardDescription className="text-sm sm:text-base">{SUBSCRIPTION_PLAN.description}</CardDescription>
+          <CardTitle className="text-xl sm:text-2xl">
+            {SUBSCRIPTION_PLAN.name}
+          </CardTitle>
+          <CardDescription className="text-sm sm:text-base">
+            {SUBSCRIPTION_PLAN.description}
+          </CardDescription>
         </CardHeader>
 
         <CardContent className="pt-0">
@@ -89,7 +93,6 @@ export default function SubscriptionSelection({
           </ul>
         </CardContent>
       </Card>
-
 
       <Card>
         <CardContent className="pt-4 sm:pt-6">
